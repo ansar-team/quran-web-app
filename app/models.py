@@ -50,3 +50,22 @@ class Lesson(Base):
     # Relationships
     course = relationship("Course", back_populates="lessons")
     words = relationship("Word", back_populates="lesson", cascade="all, delete-orphan")
+
+
+class Word(Base):
+    __tablename__ = "words"
+
+    id = Column(Integer, primary_key=True, index=True)
+    lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=False)
+    text = Column(String, nullable=False)  # The word/phrase to learn
+    translation = Column(String, nullable=False)  # Translation in native language
+    pronunciation = Column(String, nullable=True)  # IPA or pronunciation guide
+    example_sentence = Column(Text, nullable=True)  # Example usage
+    difficulty_level = Column(Integer, default=1)  # 1-5 difficulty scale
+    order_index = Column(Integer, nullable=False)  # Order within lesson
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    lesson = relationship("Lesson", back_populates="words")
+    user_words = relationship("UserWord", back_populates="word", cascade="all, delete-orphan")
