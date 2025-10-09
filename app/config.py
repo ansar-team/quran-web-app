@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     debug: bool = True
 
     class Config:
-        env_file = "../.env"
+        env_file = ".env"
         case_sensitive = False
 
 

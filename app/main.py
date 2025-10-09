@@ -1,7 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from app.database import engine
+from app.models import Base
 from pathlib import Path
+
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
 # Create FastAPI app
 app = FastAPI(
