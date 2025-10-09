@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean, JSON, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -69,3 +69,79 @@ class Word(Base):
     # Relationships
     lesson = relationship("Lesson", back_populates="words")
     user_words = relationship("UserWord", back_populates="word", cascade="all, delete-orphan")
+
+
+class UserWord(Base):
+    """Tracks user's progress with specific words using FSRS"""
+    __tablename__ = "user_words"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    word_id = Column(Integer, ForeignKey("words.id"), nullable=False)
+
+    # FSRS Card data (serialized as JSON)
+    fsrs_card_data = Column(JSON, nullable=False)
+
+    # Additional tracking
+    total_reviews = Column(Integer, default=0)
+    correct_reviews = Column(Integer, default=0)
+    last_reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User")
+    word = relationship("Word", back_populates="user_words")
+    reviews = relationship("Review", back_populates="user_word", cascade="all, delete-orphan")
+
+
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_word_id = Column(Integer, ForeignKey("user_words.id"), nullable=False)
+
+    # FSRS Review data
+    rating = Column(Integer, nullable=False)  # 1=Again, 2=Hard, 3=Good, 4=Easy
+    review_datetime = Column(DateTime(timezone=True), server_default=func.now())
+    scheduled_days = Column(Integer, nullable=True)  # Days until next review
+    elapsed_days = Column(Integer, nullable=True)  # Days since last review
+    review = Column(Integer, nullable=True)  # Review count
+    lapses = Column(Integer, nullable=True)  # Number of times forgot
+
+    # Additional metadata
+    lesson_context = Column(Integer, ForeignKey("lessons.id"), nullable=True)  # Which lesson this review was in
+    response_time_seconds = Column(Float, nullable=True)  # Time taken to answer
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    user_word = relationship("UserWord", back_populates="reviews")
+    lesson = relationship("Lesson")
+
+
+class LessonProgress(Base):
+    """Tracks user's progress through lessons"""
+    __tablename__ = "lesson_progress"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    lesson_id = Column(Integer, ForeignKey("lessons.id"), nullable=False)
+
+    # Progress tracking
+    words_learned = Column(Integer, default=0)  # Words marked as "learned"
+    words_to_review = Column(Integer, default=0)  # Words marked as "to learn"
+    total_words = Column(Integer, nullable=False)
+
+    # Lesson completion
+    is_started = Column(Boolean, default=False)
+    is_completed = Column(Boolean, default=False)
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User")
+    lesson = relationship("Lesson")
