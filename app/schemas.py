@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 
@@ -116,3 +116,21 @@ class Word(WordBase):
 
     class Config:
         from_attributes = True
+
+
+class LessonWithWords(Lesson):
+    words: List[Word] = []
+
+
+class CourseWithLessons(Course):
+    lessons: List[Lesson] = []
+
+
+class CourseWithLessonsAndWords(Course):
+    lessons: List[LessonWithWords] = []
+
+
+class SuccessResponse(BaseModel):
+    success: bool
+    message: Optional[str] = None
+    data: Optional[Dict[str, Any]] = None

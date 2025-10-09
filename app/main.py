@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from app.database import engine
 from app.models import Base
+from app.api import courses, lessons, words, users, telegram_auth
 from pathlib import Path
 
 
@@ -25,6 +26,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include routers
+app.include_router(courses.router, prefix="/api/v1")
+app.include_router(lessons.router, prefix="/api/v1")
+app.include_router(words.router, prefix="/api/v1")
+app.include_router(users.router, prefix="/api/v1")
+app.include_router(telegram_auth.router, prefix="/api/v1")
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
