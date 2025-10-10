@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Spaced Repetition Learning{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1>🧠 Spaced Repetition Learning</h1>
+    <p>Master new words with intelligent spaced repetition</p>
+</div>
+
+<div class="card">
+    <h2>Welcome!</h2>
+    <p style="margin: 16px 0; color: var(--tg-theme-hint-color, #666);">
+        This mini app helps you learn new words using the scientifically-proven spaced repetition technique.
+    </p>
+    <a href="/courses" class="btn">📚 My Courses</a>
+    <a href="/stats" class="btn btn-secondary">📊 View Progress</a>
+</div>
+
+<div class="card" style="background: #e8f5e9;">
+    <h3 style="margin-bottom: 12px;">🎯 How it works</h3>
+    <ol style="padding-left: 20px; line-height: 1.8;">
+        <li>Choose a course and lesson to study</li>
+        <li>Learn new words by rating your memory</li>
+        <li>Review words that need more practice</li>
+        <li>Words appear at optimal intervals for retention</li>
+    </ol>
+</div>
+{% endblock %}
+
+{% block scripts %}
+// Auto-authenticate user
+async function initApp() {
+    try {
+        const response = await fetch('/telegram/mini-app/auth', {
+            method: 'POST',
+            headers: createAuthHeaders()
+        });
+
+        if (!response.ok) {
+            tg.showAlert('Authentication failed');
+        }
+    } catch (error) {
+        console.error('Init error:', error);
+    }
+}
+
+initApp();
+{% endblock %}
