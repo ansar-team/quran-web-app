@@ -1,5 +1,6 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
@@ -9,18 +10,26 @@ from app.schemas import (
 )
 from app.crud import CourseCRUD
 from app.api.dependencies import get_current_user
+import os
 
 router = APIRouter(prefix="/courses", tags=["courses"])
 
+# Configure templates relative to this file
+current_dir = os.path.dirname(os.path.abspath(__file__))
+templates_dir = os.path.join(current_dir, "../templates")
+templates = Jinja2Templates(directory=templates_dir)
 
-@router.get("/", response_model=List[Course])
+@router.get("/", response_class=HTMLResponse)
 async def get_user_courses(
-        current_user: User = Depends(get_current_user),
-        db: Session = Depends(get_db)
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """Get all courses for the current user"""
-    return CourseCRUD.get_user_courses(db, current_user.id)
-
+    courses_list = CourseCRUD.get_user_courses(db, current_user.id)
+    return templates.TemplateResponse("courses.html", {
+        "request": request,
+        "courses": courses_list
+    })
 
 @router.post("/", response_model=Course)
 async def create_course(

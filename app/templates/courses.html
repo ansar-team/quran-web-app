@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}My Courses{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1>📚 My Courses</h1>
+    <p>Select a course to continue learning</p>
+</div>
+
+{% if courses %}
+    {% for course in courses %}
+    <div class="card" onclick="location.href='/courses/{{ course.id }}'">
+        <h3>{{ course.title }}</h3>
+        <p style="margin: 8px 0; color: var(--tg-theme-hint-color, #666);">
+            {{ course.description or 'No description' }}
+        </p>
+        <p style="font-size: 14px; color: var(--tg-theme-hint-color, #666);">
+            <strong>Language:</strong> {{ course.native_language }} → {{ course.language }}
+        </p>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📚</div>
+        <h3>No courses yet</h3>
+        <p>You need to create a course through the API to start learning</p>
+    </div>
+{% endif %}
+
+<a href="/" class="btn btn-secondary">← Back to Home</a>
+{% endblock %}
+
+{% block scripts %}
+// Add click feedback
+document.querySelectorAll('.card').forEach(card => {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', () => {
+        tg.HapticFeedback.impactOccurred('light');
+    });
+});
+{% endblock %}
