@@ -25,7 +25,6 @@ async def get_course_lessons(
 
 @router.post("/course/{course_id}", response_model=Lesson)
 async def create_lesson(
-        course_id: int,
         lesson_data: LessonCreate,
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
@@ -33,14 +32,15 @@ async def create_lesson(
     """Create a new lesson in a course"""
     # Verify course belongs to user
     from app.crud import CourseCRUD
-    course = CourseCRUD.get_course(db, course_id, current_user.id)
+    course = CourseCRUD.get_course(db, lesson_data.course_id, current_user.id)
+    print(lesson_data)
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Course not found"
         )
 
-    return LessonCRUD.create_lesson(db, lesson_data, course_id)
+    return LessonCRUD.create_lesson(db, lesson_data)
 
 
 @router.get("/{lesson_id}", response_model=LessonWithWords)

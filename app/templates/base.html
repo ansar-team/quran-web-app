@@ -176,6 +176,42 @@
             100% { transform: rotate(360deg); }
         }
 
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--tg-theme-hint-color, #e0e0e0);
+            border-radius: 8px;
+            font-size: 16px;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--tg-theme-button-color, #007bff);
+        }
+
+        textarea.form-input {
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        select.form-input {
+            cursor: pointer;
+        }
+
         {% block extra_styles %}{% endblock %}
     </style>
 </head>

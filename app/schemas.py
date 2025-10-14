@@ -67,7 +67,7 @@ class LessonBase(BaseModel):
 
 
 class LessonCreate(LessonBase):
-    pass
+    course_id: int
 
 
 class LessonUpdate(BaseModel):

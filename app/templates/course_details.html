@@ -33,6 +33,10 @@
 
 <h2 style="margin: 24px 0 16px 0;">📖 Lessons</h2>
 
+<a href="/courses/{{ course_id }}/lessons/create" id="create-lesson-btn" class="btn" style="background: #28a745; margin-bottom: 16px;">
+    ➕ Create New Lesson
+</a>
+
 <div id="lessons-list">
     <div style="text-align: center; padding: 40px;">
         <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
@@ -83,9 +87,8 @@ async function loadCourseData() {
             `;
         } else {
             lessonsList.innerHTML = lessons.map(lesson => `
-                <div class="card lesson-item ${lesson.is_completed ? 'completed' : ''}"
-                     style="cursor: pointer;"
-                     onclick="location.href='/lessons/${lesson.id}'">
+                <a href="/lessons/${lesson.id}" class="card-link" style="text-decoration: none; color: inherit;">
+                <div class="card lesson-item ${lesson.is_completed ? 'completed' : ''}">
                     <h3>
                         ${lesson.title}
                         ${lesson.is_completed ? '<span class="badge badge-success">✓ Completed</span>' : ''}
@@ -97,6 +100,7 @@ async function loadCourseData() {
                         Lesson ${lesson.order_index}
                     </p>
                 </div>
+                </a>
             `).join('');
 
             // Add haptic feedback
