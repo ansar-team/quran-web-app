@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Lesson Details{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1 id="lesson-title">Loading...</h1>
+    <p id="lesson-description"></p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number" id="total-words">0</div>
+        <div class="stat-label">Total Words</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" id="learned-count">0</div>
+        <div class="stat-label">Learned</div>
+    </div>
+</div>
+
+<a href="/study/{{ lesson_id }}" class="btn btn-success">
+    ▶️ Start Learning
+</a>
+
+<h2 style="margin: 24px 0 16px 0;">📝 Words in this Lesson</h2>
+
+<a href="#" id="add-word-btn" class="btn" style="background: #28a745; margin-bottom: 16px;">
+    ➕ Add New Word
+</a>
+
+<div id="words-list">
+    <div style="text-align: center; padding: 40px;">
+        <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+        <p style="margin-top: 16px;">Loading words...</p>
+    </div>
+</div>
+
+<a href="#" id="back-to-course" class="btn btn-secondary">← Back to Course</a>
+{% endblock %}
+
+{% block scripts %}
+const lessonId = {{ lesson_id }};
+
+// Set add word button URL
+// TODO: pass lesson info to this endpoint
+document.getElementById('add-word-btn').href = `/lessons/${lessonId}/words/create`;
+let courseId = null;
+
+async function loadLessonData() {
+    try {
+        // Load lesson info
+        const lessonResponse = await fetch(`/api/v1/lessons/${lessonId}`, {
+            headers: createAuthHeaders()
+        });
+
+        if (!lessonResponse.ok) {
+            throw new Error('Failed to load lesson');
+        }
+
+        const lesson = await lessonResponse.json();
+        courseId = lesson.course_id;
+
+        document.getElementById('lesson-title').textContent = lesson.title;
+        document.getElementById('lesson-description').textContent = lesson.description || '';
+        document.getElementById('back-to-course').href = `/courses/${courseId}`;
+
+        // Load words
+        const wordsResponse = await fetch(`/api/v1/words/lesson/${lessonId}`, {
+            headers: createAuthHeaders()
+        });
+
+        if (!wordsResponse.ok) {
+            throw new Error('Failed to load words');
+        }
+
+        const words = await wordsResponse.json();
+        document.getElementById('total-words').textContent = words.length;
+
+        const wordsList = document.getElementById('words-list');
+
+        if (words.length === 0) {
+            wordsList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📝</div>
+                    <h3>No words yet</h3>
+                    <p>Add words through the API to start learning</p>
+                </div>
+            `;
+        } else {
+            wordsList.innerHTML = words.map(word => `
+                <div class="card">
+                    <div style="font-size: 20px; font-weight: 600; margin-bottom: 8px;">
+                        ${word.text}
+                    </div>
+                    <div style="font-size: 16px; color: var(--tg-theme-hint-color, #6c757d); margin-bottom: 6px;">
+                        ${word.translation}
+                    </div>
+                    ${word.pronunciation ? `
+                        <div style="font-style: italic; font-size: 14px; color: var(--tg-theme-hint-color, #999);">
+                            ${word.pronunciation}
+                        </div>
+                    ` : ''}
+                    ${word.example_sentence ? `
+                        <div style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 14px; font-style: italic;">
+                            ${word.example_sentence}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Error loading lesson data:', error);
+        tg.showAlert('Failed to load lesson data. Please try again.');
+    }
+}
+
+// Add haptic feedback for start button
+document.querySelector('.btn-success')?.addEventListener('click', (e) => {
+    tg.HapticFeedback.impactOccurred('medium');
+});
+
+// Load data on page load
+loadLessonData();
+{% endblock %}

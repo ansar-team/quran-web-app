@@ -90,8 +90,8 @@ class LessonCRUD:
         ).first()
 
     @staticmethod
-    def create_lesson(db: Session, lesson_data: LessonCreate, course_id: int) -> Lesson:
-        db_lesson = Lesson(**lesson_data.dict(), course_id=course_id)
+    def create_lesson(db: Session, lesson_data: LessonCreate) -> Lesson:
+        db_lesson = Lesson(**lesson_data.dict())
         db.add(db_lesson)
         db.commit()
         db.refresh(db_lesson)

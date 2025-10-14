@@ -1,5 +1,6 @@
 from typing import Optional
 from fastapi import Depends, HTTPException, status, Header
+from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 
 from app import schemas
@@ -9,9 +10,12 @@ from app.config import settings
 from app.models import User
 from app.utils.telegram import extract_telegram_init_data, verify_telegram_webapp_data
 
+security = HTTPBearer()
+
 
 def get_current_user(
         authorization: Optional[str] = Header(None),
+        # init_data: str = Depends(security),
         db: Session = Depends(get_db)
 ) -> User:
     """
@@ -49,11 +53,7 @@ def get_current_user(
                 db.commit()
                 db.refresh(existing_user)
 
-            return {
-                "success": True,
-                "data": schemas.UserResponse.model_validate(existing_user),
-                "message": "User authenticated successfully"
-            }
+            return existing_user
         else:
             # Create new user
             user_create = schemas.UserCreate(
@@ -65,12 +65,7 @@ def get_current_user(
             )
 
             new_user = UserCRUD.create_user(db, user_create)
-
-            return {
-                "success": True,
-                "data": schemas.UserResponse.model_validate(new_user),
-                "message": "User created and authenticated successfully"
-            }
+            return new_user
 
     except HTTPException:
         raise

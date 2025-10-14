@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Create Lesson{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1>📖 Create New Lesson</h1>
+    <p id="course-name">Loading...</p>
+</div>
+
+<form id="lesson-form" class="card">
+    <div class="form-group">
+        <label for="title">Lesson Title *</label>
+        <input type="text" id="title" name="title" class="form-input" required
+               placeholder="e.g., Greetings and Introductions">
+    </div>
+
+    <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" class="form-input" rows="3"
+                  placeholder="What students will learn in this lesson"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="order_index">Lesson Number *</label>
+        <input type="number" id="order_index" name="order_index" class="form-input"
+               value="1" min="1" required>
+        <small style="color: var(--tg-theme-hint-color, #666); font-size: 12px;">
+            Order in which this lesson appears in the course
+        </small>
+    </div>
+
+    <button type="submit" class="btn">✓ Create Lesson</button>
+    <a href="#" id="cancel-btn" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}
+
+{% block scripts %}
+const courseId = {{ course_id }};
+
+// Load course info
+async function loadCourseInfo() {
+    try {
+        const response = await fetch(`/api/v1/courses/${courseId}`, {
+            headers: createAuthHeaders()
+        });
+
+        if (response.ok) {
+            const course = await response.json();
+            document.getElementById('course-name').textContent = `For course: ${course.title}`;
+
+            // Set next lesson number
+            if (course.lessons && course.lessons.length > 0) {
+                const maxOrder = Math.max(...course.lessons.map(l => l.order_index || 0));
+                document.getElementById('order_index').value = maxOrder + 1;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading course:', error);
+    }
+}
+
+document.getElementById('cancel-btn').href = `/courses/${courseId}`;
+
+document.getElementById('lesson-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value || null,
+        order_index: parseInt(document.getElementById('order_index').value),
+        course_id: courseId
+    };
+
+    try {
+        tg.HapticFeedback.impactOccurred('medium');
+
+        const response = await fetch(`/api/v1/lessons/course/${courseId}`, {
+            method: 'POST',
+            headers: createAuthHeaders(),
+            body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+            const lesson = await response.json();
+            tg.HapticFeedback.notificationOccurred('success');
+            tg.showAlert('Lesson created successfully!', () => {
+                location.href = '/courses/${courseId}';
+            });
+        } else {
+            const error = await response.json();
+            tg.showAlert(`Error: ${error.detail || 'Failed to create lesson'}`);
+        }
+    } catch (error) {
+        console.error('Error creating lesson:', error);
+        tg.showAlert('Failed to create lesson. Please try again.');
+    }
+});
+
+// Load course info on page load
+loadCourseInfo();
+{% endblock %}

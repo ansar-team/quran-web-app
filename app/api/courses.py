@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
@@ -10,26 +9,18 @@ from app.schemas import (
 )
 from app.crud import CourseCRUD
 from app.api.dependencies import get_current_user
-import os
+
 
 router = APIRouter(prefix="/courses", tags=["courses"])
 
-# Configure templates relative to this file
-current_dir = os.path.dirname(os.path.abspath(__file__))
-templates_dir = os.path.join(current_dir, "../templates")
-templates = Jinja2Templates(directory=templates_dir)
-
-@router.get("/", response_class=HTMLResponse)
+@router.get("/", response_model=List[Course])
 async def get_user_courses(
-    request: Request,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db)
 ):
-    courses_list = CourseCRUD.get_user_courses(db, current_user.id)
-    return templates.TemplateResponse("courses.html", {
-        "request": request,
-        "courses": courses_list
-    })
+    """Get all courses for the current user"""
+    return CourseCRUD.get_user_courses(db, current_user.id)
+
 
 @router.post("/", response_model=Course)
 async def create_course(
@@ -57,23 +48,29 @@ async def get_course(
 
     # Load lessons with words
     from app.crud import LessonCRUD, WordCRUD
+    from app.schemas import LessonWithWords
+
     lessons = LessonCRUD.get_course_lessons(db, course_id, current_user.id)
 
-    course_with_lessons = CourseWithLessonsAndWords(
-        **course.__dict__,
-        lessons=[]
-    )
-
+    # course_with_lessons = CourseWithLessonsAndWords(
+    #     **course.__dict__,
+    #     lessons=[]
+    # )
+    lessons_with_words = []
     for lesson in lessons:
         words = WordCRUD.get_lesson_words(db, lesson.id, current_user.id)
-        lesson_with_words = {
+        lesson_with_words = LessonWithWords(
             **lesson.__dict__,
-            "words": words
-        }
-        course_with_lessons.lessons.append(lesson_with_words)
+            words=words
+        )
+        lessons_with_words.append(lesson_with_words)
+        # course_with_lessons.lessons.append(lesson_with_words)
 
-    return course_with_lessons
-
+    # return course_with_lessons
+    return CourseWithLessonsAndWords(
+        **course.__dict__,
+        lessons=lessons_with_words
+    )
 
 @router.put("/{course_id}", response_model=Course)
 async def update_course(
