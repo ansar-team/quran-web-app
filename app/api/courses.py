@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 from app.schemas import (
-    Course, CourseCreate, CourseUpdate, CourseWithLessonsAndWords,
-    SuccessResponse
+    CourseSchema, CourseCreateSchema, CourseUpdateSchema, CourseWithLessonsAndWordsSchema,
+    SuccessResponseSchema
 )
 from app.crud import CourseCRUD
 from app.api.dependencies import get_current_user
@@ -13,7 +13,7 @@ from app.api.dependencies import get_current_user
 
 router = APIRouter(prefix="/courses", tags=["courses"])
 
-@router.get("/", response_model=List[Course])
+@router.get("/", response_model=List[CourseSchema])
 async def get_user_courses(
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
@@ -22,9 +22,9 @@ async def get_user_courses(
     return CourseCRUD.get_user_courses(db, current_user.id)
 
 
-@router.post("/", response_model=Course)
+@router.post("/", response_model=CourseSchema)
 async def create_course(
-        course_data: CourseCreate,
+        course_data: CourseCreateSchema,
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
@@ -32,7 +32,7 @@ async def create_course(
     return CourseCRUD.create_course(db, course_data, current_user.id)
 
 
-@router.get("/{course_id}", response_model=CourseWithLessonsAndWords)
+@router.get("/{course_id}", response_model=CourseWithLessonsAndWordsSchema)
 async def get_course(
         course_id: int,
         current_user: User = Depends(get_current_user),
@@ -48,7 +48,7 @@ async def get_course(
 
     # Load lessons with words
     from app.crud import LessonCRUD, WordCRUD
-    from app.schemas import LessonWithWords
+    from app.schemas import LessonWithWordsSchema
 
     lessons = LessonCRUD.get_course_lessons(db, course_id, current_user.id)
 
@@ -59,7 +59,7 @@ async def get_course(
     lessons_with_words = []
     for lesson in lessons:
         words = WordCRUD.get_lesson_words(db, lesson.id, current_user.id)
-        lesson_with_words = LessonWithWords(
+        lesson_with_words = LessonWithWordsSchema(
             **lesson.__dict__,
             words=words
         )
@@ -67,15 +67,15 @@ async def get_course(
         # course_with_lessons.lessons.append(lesson_with_words)
 
     # return course_with_lessons
-    return CourseWithLessonsAndWords(
+    return CourseWithLessonsAndWordsSchema(
         **course.__dict__,
         lessons=lessons_with_words
     )
 
-@router.put("/{course_id}", response_model=Course)
+@router.put("/{course_id}", response_model=CourseSchema)
 async def update_course(
         course_id: int,
-        course_data: CourseUpdate,
+        course_data: CourseUpdateSchema,
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
@@ -89,7 +89,7 @@ async def update_course(
     return course
 
 
-@router.delete("/{course_id}", response_model=SuccessResponse)
+@router.delete("/{course_id}", response_model=SuccessResponseSchema)
 async def delete_course(
         course_id: int,
         current_user: User = Depends(get_current_user),
@@ -103,7 +103,7 @@ async def delete_course(
             detail="Course not found"
         )
 
-    return SuccessResponse(
+    return SuccessResponseSchema(
         success=True,
         message="Course deleted successfully"
     )

@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 from app.schemas import (
-    Lesson, LessonCreate, LessonUpdate, LessonWithWords,
-    SuccessResponse
+    LessonSchema, LessonCreateSchema, LessonUpdateSchema, LessonWithWordsSchema,
+    SuccessResponseSchema
 )
 from app.crud import LessonCRUD, WordCRUD
 from app.api.dependencies import get_current_user
@@ -13,7 +13,7 @@ from app.api.dependencies import get_current_user
 router = APIRouter(prefix="/lessons", tags=["lessons"])
 
 
-@router.get("/course/{course_id}", response_model=List[Lesson])
+@router.get("/course/{course_id}", response_model=List[LessonSchema])
 async def get_course_lessons(
         course_id: int,
         current_user: User = Depends(get_current_user),
@@ -23,9 +23,9 @@ async def get_course_lessons(
     return LessonCRUD.get_course_lessons(db, course_id, current_user.id)
 
 
-@router.post("/course/{course_id}", response_model=Lesson)
+@router.post("/course/{course_id}", response_model=LessonSchema)
 async def create_lesson(
-        lesson_data: LessonCreate,
+        lesson_data: LessonCreateSchema,
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
@@ -43,7 +43,7 @@ async def create_lesson(
     return LessonCRUD.create_lesson(db, lesson_data)
 
 
-@router.get("/{lesson_id}", response_model=LessonWithWords)
+@router.get("/{lesson_id}", response_model=LessonWithWordsSchema)
 async def get_lesson(
         lesson_id: int,
         current_user: User = Depends(get_current_user),
@@ -59,16 +59,16 @@ async def get_lesson(
 
     words = WordCRUD.get_lesson_words(db, lesson_id, current_user.id)
 
-    return LessonWithWords(
+    return LessonWithWordsSchema(
         **lesson.__dict__,
         words=words
     )
 
 
-@router.put("/{lesson_id}", response_model=Lesson)
+@router.put("/{lesson_id}", response_model=LessonSchema)
 async def update_lesson(
         lesson_id: int,
-        lesson_data: LessonUpdate,
+        lesson_data: LessonUpdateSchema,
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
@@ -82,7 +82,7 @@ async def update_lesson(
     return lesson
 
 
-@router.delete("/{lesson_id}", response_model=SuccessResponse)
+@router.delete("/{lesson_id}", response_model=SuccessResponseSchema)
 async def delete_lesson(
         lesson_id: int,
         current_user: User = Depends(get_current_user),
@@ -96,7 +96,7 @@ async def delete_lesson(
             detail="Lesson not found"
         )
 
-    return SuccessResponse(
+    return SuccessResponseSchema(
         success=True,
         message="Lesson deleted successfully"
     )

@@ -1,10 +1,13 @@
+from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, desc, asc
-from app.models import User, Course, Lesson, Word
+from app.models import User, Course, Lesson, Word, UserWord, LessonProgress
 from app.schemas import (
-    UserCreate, CourseCreate, CourseUpdate, LessonCreate, LessonUpdate,
-    WordCreate, WordUpdate
+    UserCreateSchema, UserSchema, CourseCreateSchema, CourseUpdateSchema, CourseSchema,
+    LessonCreateSchema, LessonUpdateSchema, LessonSchema, WordCreateSchema,
+    WordUpdateSchema, WordSchema, LessonProgressCreateSchema, LessonProgressUpdateSchema,
+    LessonProgressSchema, UserWordSchema
 )
 
 
@@ -14,15 +17,15 @@ class UserCRUD:
         return db.query(User).filter(User.telegram_id == telegram_id).first()
 
     @staticmethod
-    def create_user(db: Session, user_data: UserCreate) -> User:
-        db_user = User(**user_data.dict())
+    def create_user(db: Session, user_data: UserCreateSchema) -> UserSchema:
+        db_user = UserSchema(**user_data.dict())
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
         return db_user
 
     @staticmethod
-    def update_user(db: Session, user_id: int, **kwargs) -> Optional[User]:
+    def update_user(db: Session, user_id: int, **kwargs) -> Optional[UserSchema]:
         user = db.query(User).filter(User.id == user_id).first()
         if user:
             for key, value in kwargs.items():
@@ -34,25 +37,25 @@ class UserCRUD:
 
 class CourseCRUD:
     @staticmethod
-    def get_user_courses(db: Session, user_id: int) -> List[Course]:
+    def get_user_courses(db: Session, user_id: int) -> List[CourseSchema]:
         return db.query(Course).filter(Course.user_id == user_id).order_by(desc(Course.created_at)).all()
 
     @staticmethod
-    def get_course(db: Session, course_id: int, user_id: int) -> Optional[Course]:
+    def get_course(db: Session, course_id: int, user_id: int) -> Optional[CourseSchema]:
         return db.query(Course).filter(
             and_(Course.id == course_id, Course.user_id == user_id)
         ).first()
 
     @staticmethod
-    def create_course(db: Session, course_data: CourseCreate, user_id: int) -> Course:
-        db_course = Course(**course_data.dict(), user_id=user_id)
+    def create_course(db: Session, course_data: CourseCreateSchema, user_id: int) -> CourseSchema:
+        db_course = CourseSchema(**course_data.dict(), user_id=user_id)
         db.add(db_course)
         db.commit()
         db.refresh(db_course)
         return db_course
 
     @staticmethod
-    def update_course(db: Session, course_id: int, user_id: int, course_data: CourseUpdate) -> Optional[Course]:
+    def update_course(db: Session, course_id: int, user_id: int, course_data: CourseUpdateSchema) -> Optional[CourseSchema]:
         course = db.query(Course).filter(
             and_(Course.id == course_id, Course.user_id == user_id)
         ).first()
@@ -78,27 +81,27 @@ class CourseCRUD:
 
 class LessonCRUD:
     @staticmethod
-    def get_course_lessons(db: Session, course_id: int, user_id: int) -> List[Lesson]:
+    def get_course_lessons(db: Session, course_id: int, user_id: int) -> List[LessonSchema]:
         return db.query(Lesson).join(Course).filter(
             and_(Lesson.course_id == course_id, Course.user_id == user_id)
         ).order_by(asc(Lesson.order_index)).all()
 
     @staticmethod
-    def get_lesson(db: Session, lesson_id: int, user_id: int) -> Optional[Lesson]:
+    def get_lesson(db: Session, lesson_id: int, user_id: int) -> Optional[LessonSchema]:
         return db.query(Lesson).join(Course).filter(
             and_(Lesson.id == lesson_id, Course.user_id == user_id)
         ).first()
 
     @staticmethod
-    def create_lesson(db: Session, lesson_data: LessonCreate) -> Lesson:
-        db_lesson = Lesson(**lesson_data.dict())
+    def create_lesson(db: Session, lesson_data: LessonCreateSchema) -> LessonSchema:
+        db_lesson = LessonSchema(**lesson_data.dict())
         db.add(db_lesson)
         db.commit()
         db.refresh(db_lesson)
         return db_lesson
 
     @staticmethod
-    def update_lesson(db: Session, lesson_id: int, user_id: int, lesson_data: LessonUpdate) -> Optional[Lesson]:
+    def update_lesson(db: Session, lesson_id: int, user_id: int, lesson_data: LessonUpdateSchema) -> Optional[LessonSchema]:
         lesson = db.query(Lesson).join(Course).filter(
             and_(Lesson.id == lesson_id, Course.user_id == user_id)
         ).first()
@@ -124,27 +127,27 @@ class LessonCRUD:
 
 class WordCRUD:
     @staticmethod
-    def get_lesson_words(db: Session, lesson_id: int, user_id: int) -> List[Word]:
+    def get_lesson_words(db: Session, lesson_id: int, user_id: int) -> List[WordSchema]:
         return db.query(Word).join(Lesson).join(Course).filter(
             and_(Word.lesson_id == lesson_id, Course.user_id == user_id)
         ).order_by(asc(Word.order_index)).all()
 
     @staticmethod
-    def get_word(db: Session, word_id: int, user_id: int) -> Optional[Word]:
+    def get_word(db: Session, word_id: int, user_id: int) -> Optional[WordSchema]:
         return db.query(Word).join(Lesson).join(Course).filter(
             and_(Word.id == word_id, Course.user_id == user_id)
         ).first()
 
     @staticmethod
-    def create_word(db: Session, word_data: WordCreate, lesson_id: int) -> Word:
-        db_word = Word(**word_data.dict(), lesson_id=lesson_id)
+    def create_word(db: Session, word_data: WordCreateSchema, lesson_id: int) -> WordSchema:
+        db_word = WordSchema(**word_data.dict(), lesson_id=lesson_id)
         db.add(db_word)
         db.commit()
         db.refresh(db_word)
         return db_word
 
     @staticmethod
-    def update_word(db: Session, word_id: int, user_id: int, word_data: WordUpdate) -> Optional[Word]:
+    def update_word(db: Session, word_id: int, user_id: int, word_data: WordUpdateSchema) -> Optional[WordSchema]:
         word = db.query(Word).join(Lesson).join(Course).filter(
             and_(Word.id == word_id, Course.user_id == user_id)
         ).first()
@@ -166,3 +169,79 @@ class WordCRUD:
             db.commit()
             return True
         return False
+
+
+class UserWordCRUD:
+    @staticmethod
+    def get_user_word(db: Session, user_id: int, word_id: int) -> Optional[UserWordSchema]:
+        return db.query(UserWordSchema).filter(
+            and_(UserWord.user_id == user_id, UserWord.word_id == word_id)
+        ).first()
+
+    @staticmethod
+    def get_user_words_by_lesson(db: Session, user_id: int, lesson_id: int) -> List[UserWordSchema]:
+        return db.query(UserWord).join(Word).filter(
+            and_(UserWord.user_id == user_id, Word.lesson_id == lesson_id)
+        ).all()
+
+    @staticmethod
+    def get_user_words_due(db: Session, user_id: int, limit: int = 20) -> List[UserWordSchema]:
+        # This will be enhanced with FSRS logic
+        return db.query(UserWord).filter(UserWord.user_id == user_id).limit(limit).all()
+
+
+class LessonProgressCRUD:
+    @staticmethod
+    def get_lesson_progress(db: Session, user_id: int, lesson_id: int) -> Optional[LessonProgressSchema]:
+        return db.query(LessonProgress).filter(
+            and_(LessonProgress.user_id == user_id, LessonProgress.lesson_id == lesson_id)
+        ).first()
+
+    @staticmethod
+    def create_lesson_progress(db: Session, progress_data: LessonProgressCreateSchema, user_id: int) -> LessonProgressSchema:
+        db_progress = LessonProgressSchema(**progress_data.dict(), user_id=user_id)
+        db.add(db_progress)
+        db.commit()
+        db.refresh(db_progress)
+        return db_progress
+
+    @staticmethod
+    def update_lesson_progress(db: Session, user_id: int, lesson_id: int,
+                               progress_data: LessonProgressUpdateSchema) -> Optional[LessonProgressSchema]:
+        progress = db.query(LessonProgress).filter(
+            and_(LessonProgress.user_id == user_id, LessonProgress.lesson_id == lesson_id)
+        ).first()
+        if progress:
+            update_data = progress_data.dict(exclude_unset=True)
+            for key, value in update_data.items():
+                setattr(progress, key, value)
+
+            # Update timestamps
+            if update_data.get('is_started') and not progress.started_at:
+                progress.started_at = datetime.now(timezone.utc)
+            if update_data.get('is_completed') and not progress.completed_at:
+                progress.completed_at = datetime.now(timezone.utc)
+
+            db.commit()
+            db.refresh(progress)
+        return progress
+
+    @staticmethod
+    def get_user_progress_summary(db: Session, user_id: int) -> dict:
+        """Get overall progress summary for a user"""
+        total_lessons = db.query(LessonProgress).filter(LessonProgress.user_id == user_id).count()
+        completed_lessons = db.query(LessonProgress).filter(
+            and_(LessonProgress.user_id == user_id, LessonProgress.is_completed == True)
+        ).count()
+
+        total_words = db.query(UserWord).filter(UserWord.user_id == user_id).count()
+        words_due = db.query(UserWord).filter(
+            and_(UserWord.user_id == user_id, UserWord.last_reviewed_at.isnot(None))
+        ).count()
+
+        return {
+            "total_lessons": total_lessons,
+            "completed_lessons": completed_lessons,
+            "total_words": total_words,
+            "words_due_for_review": words_due
+        }

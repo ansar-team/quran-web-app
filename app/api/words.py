@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 from app.schemas import (
-    Word, WordCreate, WordUpdate, SuccessResponse
+    WordSchema, WordCreateSchema, WordUpdateSchema, SuccessResponseSchema
 )
 from app.crud import WordCRUD
 from app.api.dependencies import get_current_user
@@ -12,7 +12,7 @@ from app.api.dependencies import get_current_user
 router = APIRouter(prefix="/words", tags=["words"])
 
 
-@router.get("/lesson/{lesson_id}", response_model=List[Word])
+@router.get("/lesson/{lesson_id}", response_model=List[WordSchema])
 async def get_lesson_words(
         lesson_id: int,
         current_user: User = Depends(get_current_user),
@@ -22,10 +22,10 @@ async def get_lesson_words(
     return WordCRUD.get_lesson_words(db, lesson_id, current_user.id)
 
 
-@router.post("/lesson/{lesson_id}", response_model=Word)
+@router.post("/lesson/{lesson_id}", response_model=WordSchema)
 async def create_word(
         lesson_id: int,
-        word_data: WordCreate,
+        word_data: WordCreateSchema,
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
@@ -42,7 +42,7 @@ async def create_word(
     return WordCRUD.create_word(db, word_data, lesson_id)
 
 
-@router.get("/{word_id}", response_model=Word)
+@router.get("/{word_id}", response_model=WordSchema)
 async def get_word(
         word_id: int,
         current_user: User = Depends(get_current_user),
@@ -58,10 +58,10 @@ async def get_word(
     return word
 
 
-@router.put("/{word_id}", response_model=Word)
+@router.put("/{word_id}", response_model=WordSchema)
 async def update_word(
         word_id: int,
-        word_data: WordUpdate,
+        word_data: WordUpdateSchema,
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
@@ -75,7 +75,7 @@ async def update_word(
     return word
 
 
-@router.delete("/{word_id}", response_model=SuccessResponse)
+@router.delete("/{word_id}", response_model=SuccessResponseSchema)
 async def delete_word(
         word_id: int,
         current_user: User = Depends(get_current_user),
@@ -89,7 +89,7 @@ async def delete_word(
             detail="Word not found"
         )
 
-    return SuccessResponse(
+    return SuccessResponseSchema(
         success=True,
         message="Word deleted successfully"
     )
