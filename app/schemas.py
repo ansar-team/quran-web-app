@@ -1,6 +1,20 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 from datetime import datetime
+from enum import IntEnum
+
+
+class RatingEnum(IntEnum):
+    AGAIN = 1
+    HARD = 2
+    GOOD = 3
+    EASY = 4
+
+
+class StateEnum(IntEnum):
+    LEARNING = 1
+    REVIEW = 2
+    RELEARNING = 3
 
 
 # Base schemas
