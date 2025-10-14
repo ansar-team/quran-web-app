@@ -3,37 +3,27 @@ import hmac
 import json
 import time
 from urllib.parse import parse_qs, unquote
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Header
 from typing import Optional
 
 
-def extract_telegram_init_data(authorization: Optional[str]) -> str:
+def extract_telegram_init_data(authorization: Optional[str] = Header(None)):
     """
-    Extract and validate Telegram WebApp init_data from an Authorization header.
-    Expected format: 'Bearer <init_data>'
+    Extract Telegram init data from Authorization header
     """
     if not authorization:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing Telegram WebApp authorization header"
-        )
+        return None
 
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid Telegram WebApp authorization format"
-        )
-
-    init_data = authorization[7:].strip()
-    if not init_data:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Missing init_data in authorization header"
-        )
+    # Check what format we're receiving
+    if authorization.startswith("tma "):
+        init_data = authorization[4:]
+    elif authorization.startswith("Bearer "):
+        init_data = authorization[7:]
+    else:
+        # Assume it's raw init data
+        init_data = authorization
 
     return init_data
-
-
 
 def verify_telegram_webapp_data(init_data: str, bot_token: str) -> Optional[dict]:
     """
@@ -42,11 +32,9 @@ def verify_telegram_webapp_data(init_data: str, bot_token: str) -> Optional[dict
     """
     try:
         parsed_data = parse_qs(init_data)
-
         received_hash = parsed_data.get("hash", [None])[0]
         if not received_hash:
             return None
-
         # Build the data check string
         data_check_string_parts = [
             f"{key}={value}"
@@ -70,7 +58,6 @@ def verify_telegram_webapp_data(init_data: str, bot_token: str) -> Optional[dict
             data_check_string.encode(),
             hashlib.sha256
         ).hexdigest()
-
         if not hmac.compare_digest(calculated_hash, received_hash):
             return None
 

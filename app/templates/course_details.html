@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Course Details{% endblock %}
+
+{% block extra_styles %}
+.lesson-item {
+    cursor: pointer;
+}
+
+.lesson-item.completed {
+    border-left: 4px solid #28a745;
+}
+
+.lesson-item:active {
+    transform: scale(0.98);
+}
+{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1 id="course-title">Loading...</h1>
+    <p id="course-description"></p>
+</div>
+
+<div class="card" style="background: #fff3cd;">
+    <button class="btn btn-warning" onclick="reviewDueWords()">
+        🔄 Review Due Words (<span id="due-words-count">0</span>)
+    </button>
+    <p style="margin-top: 12px; font-size: 13px; color: #856404;">
+        Practice words from previous lessons that need reinforcement
+    </p>
+</div>
+
+<h2 style="margin: 24px 0 16px 0;">📖 Lessons</h2>
+
+<div id="lessons-list">
+    <div style="text-align: center; padding: 40px;">
+        <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+        <p style="margin-top: 16px;">Loading lessons...</p>
+    </div>
+</div>
+
+<a href="/courses" class="btn btn-secondary">← Back to Courses</a>
+{% endblock %}
+
+{% block scripts %}
+const courseId = {{ course_id }};
+
+async function loadCourseData() {
+    try {
+        // Load course info
+        const courseResponse = await fetch(`/api/v1/courses/${courseId}`, {
+            headers: createAuthHeaders()
+        });
+
+        if (!courseResponse.ok) {
+            throw new Error('Failed to load course');
+        }
+
+        const course = await courseResponse.json();
+        document.getElementById('course-title').textContent = course.title;
+        document.getElementById('course-description').textContent = course.description || '';
+
+        // Load lessons
+        const lessonsResponse = await fetch(`/api/v1/lessons/course/${courseId}`, {
+            headers: createAuthHeaders()
+        });
+
+        if (!lessonsResponse.ok) {
+            throw new Error('Failed to load lessons');
+        }
+
+        const lessons = await lessonsResponse.json();
+        const lessonsList = document.getElementById('lessons-list');
+
+        if (lessons.length === 0) {
+            lessonsList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📖</div>
+                    <h3>No lessons yet</h3>
+                    <p>Add lessons through the API to start learning</p>
+                </div>
+            `;
+        } else {
+            lessonsList.innerHTML = lessons.map(lesson => `
+                <div class="card lesson-item ${lesson.is_completed ? 'completed' : ''}"
+                     style="cursor: pointer;"
+                     onclick="location.href='/lessons/${lesson.id}'">
+                    <h3>
+                        ${lesson.title}
+                        ${lesson.is_completed ? '<span class="badge badge-success">✓ Completed</span>' : ''}
+                    </h3>
+                    <p style="margin: 8px 0; color: var(--tg-theme-hint-color, #666);">
+                        ${lesson.description || 'No description'}
+                    </p>
+                    <p style="font-size: 14px; color: var(--tg-theme-hint-color, #666);">
+                        Lesson ${lesson.order_index}
+                    </p>
+                </div>
+            `).join('');
+
+            // Add haptic feedback
+            document.querySelectorAll('.lesson-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    tg.HapticFeedback.impactOccurred('light');
+                });
+            });
+        }
+    } catch (error) {
+        console.error('Error loading course data:', error);
+        tg.showAlert('Failed to load course data. Please try again.');
+    }
+}
+
+async function reviewDueWords() {
+    try {
+        const response = await fetch('/api/v1/reviews/due?limit=20', {
+            headers: createAuthHeaders()
+        });
+
+        if (response.ok) {
+            const dueWords = await response.json();
+            if (dueWords.length === 0) {
+                tg.showAlert('No words due for review right now!');
+            } else {
+                tg.showAlert('Review session coming soon!');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading due words:', error);
+        tg.showAlert('Failed to load due words');
+    }
+}
+
+// Load data on page load
+loadCourseData();
+{% endblock %}

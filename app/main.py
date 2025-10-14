@@ -42,6 +42,33 @@ async def root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
+@app.get("/courses", response_class=HTMLResponse)
+async def courses_page(request: Request):
+    """Courses list page - authentication happens via JavaScript"""
+    return templates.TemplateResponse("courses.html", {
+        "request": request,
+        "courses": []
+    })
+
+
+@app.get("/courses/{course_id}", response_class=HTMLResponse)
+async def course_detail_page(course_id: int, request: Request):
+    """Course detail page with lessons - data loaded via JavaScript"""
+    return templates.TemplateResponse("course_details.html", {
+        "request": request,
+        "course_id": course_id
+    })
+
+
+@app.get("/lessons/{lesson_id}", response_class=HTMLResponse)
+async def lesson_detail_page(lesson_id: int, request: Request):
+    """Lesson detail page with words - data loaded via JavaScript"""
+    return templates.TemplateResponse("lesson_detail.html", {
+        "request": request,
+        "lesson_id": lesson_id
+    })
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""

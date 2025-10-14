@@ -40,10 +40,8 @@ def telegram_mini_app_auth(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Missing user ID in Telegram data"
             )
-
         # Check if user already exists
         existing_user = UserCRUD.get_user_by_telegram_id(db, telegram_id)
-
         if existing_user:
             # Update user info if needed
             if username != existing_user.username:
@@ -53,7 +51,7 @@ def telegram_mini_app_auth(
 
             return {
                 "success": True,
-                "data": schemas.UserResponse.model_validate(existing_user),
+                "data": existing_user,
                 "message": "User authenticated successfully"
             }
         else:
@@ -67,10 +65,9 @@ def telegram_mini_app_auth(
             )
 
             new_user = UserCRUD.create_user(db, user_create)
-
             return {
                 "success": True,
-                "data": schemas.UserResponse.model_validate(new_user),
+                "data": new_user,
                 "message": "User created and authenticated successfully"
             }
 
