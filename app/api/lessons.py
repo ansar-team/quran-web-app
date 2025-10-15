@@ -31,9 +31,9 @@ async def create_lesson(
 ):
     """Create a new lesson in a course"""
     # Verify course belongs to user
+    # TODO: should remove in future?
     from app.crud import CourseCRUD
     course = CourseCRUD.get_course(db, lesson_data.course_id, current_user.id)
-    print(lesson_data)
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

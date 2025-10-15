@@ -84,6 +84,7 @@ document.getElementById('course-form').addEventListener('submit', async (e) => {
             body: JSON.stringify(formData)
         });
 
+        // TODO: remove haptic feedback
         if (response.ok) {
             const course = await response.json();
             tg.HapticFeedback.notificationOccurred('success');

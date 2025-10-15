@@ -48,11 +48,11 @@ class CourseCRUD:
 
     @staticmethod
     def create_course(db: Session, course_data: CourseCreateSchema, user_id: int) -> CourseSchema:
-        db_course = CourseSchema(**course_data.dict(), user_id=user_id)
+        db_course = Course(**course_data.__dict__, user_id=user_id)
         db.add(db_course)
         db.commit()
         db.refresh(db_course)
-        return db_course
+        return CourseSchema.model_validate(db_course)
 
     @staticmethod
     def update_course(db: Session, course_id: int, user_id: int, course_data: CourseUpdateSchema) -> Optional[CourseSchema]:
@@ -94,11 +94,11 @@ class LessonCRUD:
 
     @staticmethod
     def create_lesson(db: Session, lesson_data: LessonCreateSchema) -> LessonSchema:
-        db_lesson = LessonSchema(**lesson_data.dict())
+        db_lesson = Lesson(**lesson_data.__dict__)
         db.add(db_lesson)
         db.commit()
         db.refresh(db_lesson)
-        return db_lesson
+        return LessonSchema.model_validate(db_lesson)
 
     @staticmethod
     def update_lesson(db: Session, lesson_id: int, user_id: int, lesson_data: LessonUpdateSchema) -> Optional[LessonSchema]:
@@ -140,11 +140,11 @@ class WordCRUD:
 
     @staticmethod
     def create_word(db: Session, word_data: WordCreateSchema, lesson_id: int) -> WordSchema:
-        db_word = WordSchema(**word_data.dict(), lesson_id=lesson_id)
+        db_word = Word(**word_data.__dict__, lesson_id=lesson_id)
         db.add(db_word)
         db.commit()
         db.refresh(db_word)
-        return db_word
+        return WordSchema.model_validate(db_word)
 
     @staticmethod
     def update_word(db: Session, word_id: int, user_id: int, word_data: WordUpdateSchema) -> Optional[WordSchema]:
@@ -174,7 +174,7 @@ class WordCRUD:
 class UserWordCRUD:
     @staticmethod
     def get_user_word(db: Session, user_id: int, word_id: int) -> Optional[UserWordSchema]:
-        return db.query(UserWordSchema).filter(
+        return db.query(UserWord).filter(
             and_(UserWord.user_id == user_id, UserWord.word_id == word_id)
         ).first()
 
@@ -198,11 +198,12 @@ class LessonProgressCRUD:
         ).first()
 
     @staticmethod
-    def create_lesson_progress(db: Session, progress_data: LessonProgressCreateSchema, user_id: int) -> LessonProgressSchema:
-        db_progress = LessonProgressSchema(**progress_data.dict(), user_id=user_id)
+    def create_lesson_progress(db: Session, progress_data: LessonProgressCreateSchema, user_id: int) -> LessonProgressCreateSchema:
+        db_progress = LessonProgress(**progress_data.dict(), user_id=user_id)
         db.add(db_progress)
         db.commit()
         db.refresh(db_progress)
+        # return LessonProgressCreateSchema.model_validate(db_progress)
         return db_progress
 
     @staticmethod

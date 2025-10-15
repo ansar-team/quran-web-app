@@ -67,17 +67,18 @@ const lessonId = {{ lesson_id }};
 let saveAndContinue = false;
 
 // Load lesson info
-// TODO: get data from json body send by lesson_details.html
 async function loadLessonInfo() {
     try {
-        const response = await fetch(`/api/v1/lesson/${lessonId}`, {
+        const response = await fetch(`/api/v1/lessons/${lessonId}`, {
             headers: createAuthHeaders()
         });
 
-        if (response.ok) {
-            const lesson = await response.json();
-            document.getElementById('lesson-name').textContent = `For lesson: ${lesson.title}`;
+        if (!response.ok) {
+            throw new Error('Failed to load lesson info');
         }
+
+        const lesson = await response.json();
+        document.getElementById('lesson-name').textContent = `For lesson: ${lesson.title}`;
 
         // Load existing words to set next order
         const wordsResponse = await fetch(`/api/v1/words/lesson/${lessonId}`, {
@@ -124,6 +125,7 @@ document.getElementById('word-form').addEventListener('submit', async (e) => {
             body: JSON.stringify(formData)
         });
 
+        // TODO: remove haptic feedback
         if (response.ok) {
             const word = await response.json();
             tg.HapticFeedback.notificationOccurred('success');
@@ -148,6 +150,7 @@ document.getElementById('word-form').addEventListener('submit', async (e) => {
 
                 saveAndContinue = false;
             } else {
+                // TODO: remove haptic feedback
                 tg.showAlert('Word added successfully!', () => {
                     location.href = `/lessons/${lessonId}`;
                 });
