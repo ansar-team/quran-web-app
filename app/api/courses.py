@@ -51,11 +51,6 @@ async def get_course(
     from app.schemas import LessonWithWordsSchema
 
     lessons = LessonCRUD.get_course_lessons(db, course_id, current_user.id)
-
-    # course_with_lessons = CourseWithLessonsAndWords(
-    #     **course.__dict__,
-    #     lessons=[]
-    # )
     lessons_with_words = []
     for lesson in lessons:
         words = WordCRUD.get_lesson_words(db, lesson.id, current_user.id)
@@ -64,9 +59,7 @@ async def get_course(
             words=words
         )
         lessons_with_words.append(lesson_with_words)
-        # course_with_lessons.lessons.append(lesson_with_words)
 
-    # return course_with_lessons
     return CourseWithLessonsAndWordsSchema(
         **course.__dict__,
         lessons=lessons_with_words
