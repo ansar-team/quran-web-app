@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Study Session{% endblock %}
+
+{% block extra_styles %}
+.word-study-card {
+    background: white;
+    border-radius: 16px;
+    padding: 40px 24px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    margin: 24px 0;
+}
+
+.word-display {
+    font-size: 36px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 16px;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pronunciation {
+    font-size: 18px;
+    color: #7f8c8d;
+    font-style: italic;
+    margin-bottom: 20px;
+}
+
+.translation-display {
+    font-size: 26px;
+    font-weight: 600;
+    color: #27ae60;
+    margin: 24px 0;
+}
+
+.example-display {
+    font-size: 16px;
+    font-style: italic;
+    color: #7f8c8d;
+    margin: 20px 0;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.rating-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.rating-btn {
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.rating-btn:active {
+    transform: scale(0.95);
+}
+
+.rating-easy {
+    background: #27ae60;
+    color: white;
+}
+
+.rating-good {
+    background: #f39c12;
+    color: white;
+}
+
+.rating-hard {
+    background: #e67e22;
+    color: white;
+}
+
+.rating-again {
+    background: #e74c3c;
+    color: white;
+}
+{% endblock %}
+
+{% block content %}
+<div class="progress-bar">
+    <div class="progress-fill" id="study-progress" style="width: 0"></div>
+</div>
+
+<div style="text-align: center; margin: 16px 0; font-size: 14px; color: var(--tg-theme-hint-color, #666);">
+    Word <span id="current-word-num">1</span> of <span id="total-words">{{ words|length }}</span>
+</div>
+
+<div class="word-study-card">
+    <div class="word-display" id="word-text"></div>
+    <div class="pronunciation" id="word-pronunciation"></div>
+
+    <div id="answer-section" style="display: none;">
+        <div class="translation-display" id="word-translation"></div>
+        <div class="example-display" id="word-example"></div>
+
+        <p style="margin: 24px 0 12px 0; font-weight: 600;">How well did you remember?</p>
+        <div class="rating-buttons">
+            <button class="rating-btn rating-easy" onclick="rateWord(4)">
+                😄 Easy
+            </button>
+            <button class="rating-btn rating-good" onclick="rateWord(3)">
+                🙂 Good
+            </button>
+            <button class="rating-btn rating-hard" onclick="rateWord(2)">
+                😐 Hard
+            </button>
+            <button class="rating-btn rating-again" onclick="rateWord(1)">
+                😕 Again
+            </button>
+        </div>
+        <p style="margin-top: 16px; font-size: 13px; color: var(--tg-theme-hint-color, #666);">
+            <strong>Hard</strong> words will appear more frequently for practice
+        </p>
+    </div>
+
+    <div id="show-answer-btn">
+        <button class="btn" onclick="showAnswer()">Show Answer</button>
+        <button class="btn btn-secondary btn-sm" onclick="skipWord()">Skip</button>
+    </div>
+</div>
+
+<button class="btn btn-secondary" onclick="confirmExit()">Exit Study</button>
+{% endblock %}
+
+{% block scripts %}
+const lessonId = {{ lesson_id }};
+let words = [];
+let currentWordIndex = 0;
+
+async function loadStudyData() {
+    try {
+        const response = await fetch(`/api/v1/reviews/session/lesson/${lessonId}`, {
+            headers: createAuthHeaders()
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to load study session');
+        }
+
+        const session = await response.json();
+        words = [...session.words_to_review, ...session.new_words];
+
+        if (words.length === 0) {
+            tg.showAlert('No words to study in this lesson');
+            history.back();
+            return;
+        }
+
+        document.getElementById('total-words').textContent = words.length;
+        displayWord();
+    } catch (error) {
+        console.error('Error loading study data:', error);
+        tg.showAlert('Failed to load study session');
+        history.back();
+    }
+}
+
+function displayWord() {
+    if (currentWordIndex >= words.length) {
+        completeLesson();
+        return;
+    }
+
+    const word = words[currentWordIndex];
+    const progress = (currentWordIndex / words.length) * 100;
+
+    document.getElementById('study-progress').style.width = progress + '%';
+    document.getElementById('current-word-num').textContent = currentWordIndex + 1;
+
+    document.getElementById('word-text').textContent = word.text;
+    document.getElementById('word-pronunciation').textContent = word.pronunciation || '';
+    document.getElementById('word-translation').textContent = word.translation;
+    document.getElementById('word-example').textContent = word.example_sentence || 'No example available';
+
+    // Hide answer section
+    document.getElementById('answer-section').style.display = 'none';
+    document.getElementById('show-answer-btn').style.display = 'block';
+}
+
+function showAnswer() {
+    tg.HapticFeedback.impactOccurred('light');
+    document.getElementById('answer-section').style.display = 'block';
+    document.getElementById('show-answer-btn').style.display = 'none';
+}
+
+function skipWord() {
+    tg.HapticFeedback.selectionChanged();
+    currentWordIndex++;
+    displayWord();
+}
+
+async function rateWord(rating) {
+    tg.HapticFeedback.impactOccurred('medium');
+
+    const word = words[currentWordIndex];
+
+    try {
+        const response = await fetch('/api/v1/reviews/rate', {
+            method: 'POST',
+            headers: createAuthHeaders(),
+            body: JSON.stringify({
+                word_id: word.id,
+                rating: rating,
+                lesson_id: lessonId
+            })
+        });
+
+        if (response.ok) {
+            currentWordIndex++;
+            displayWord();
+        } else {
+            tg.showAlert('Failed to save rating. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error rating word:', error);
+        tg.showAlert('Error saving rating');
+    }
+}
+
+function completeLesson() {
+    tg.HapticFeedback.notificationOccurred('success');
+    location.href = `/lessons/${lessonId}/complete`;
+}
+
+function confirmExit() {
+    tg.showConfirm('Exit study session? Your progress will be saved.', (confirmed) => {
+        if (confirmed) {
+            location.href = `/lessons/${lessonId}`;
+        }
+    });
+}
+
+// Mark lesson as started when study begins
+async function markLessonStarted() {
+    try {
+        await fetch(`/api/v1/reviews/lesson/${lessonId}/start`, {
+            method: 'POST',
+            headers: createAuthHeaders()
+        });
+    } catch (error) {
+        console.error('Error marking lesson as started:', error);
+    }
+}
+
+// Initialize
+markLessonStarted();
+loadStudyData();
+{% endblock %}

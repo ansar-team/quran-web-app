@@ -190,12 +190,14 @@ class LessonProgressBaseSchema(BaseModel):
 
 
 class LessonProgressCreateSchema(LessonProgressBaseSchema):
-    pass
+    is_started: Optional[bool] = None
+    is_completed: Optional[bool] = None
 
 
 class LessonProgressUpdateSchema(BaseModel):
     words_learned: Optional[int] = None
     words_to_review: Optional[int] = None
+    total_words: Optional[int] = None
     is_started: Optional[bool] = None
     is_completed: Optional[bool] = None
 

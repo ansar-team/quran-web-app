@@ -199,12 +199,11 @@ class LessonProgressCRUD:
 
     @staticmethod
     def create_lesson_progress(db: Session, progress_data: LessonProgressCreateSchema, user_id: int) -> LessonProgressCreateSchema:
-        db_progress = LessonProgress(**progress_data.dict(), user_id=user_id)
+        db_progress = LessonProgress(**progress_data.__dict__, user_id=user_id)
         db.add(db_progress)
         db.commit()
         db.refresh(db_progress)
-        # return LessonProgressCreateSchema.model_validate(db_progress)
-        return db_progress
+        return LessonProgressCreateSchema.model_validate(db_progress)
 
     @staticmethod
     def update_lesson_progress(db: Session, user_id: int, lesson_id: int,
@@ -216,16 +215,14 @@ class LessonProgressCRUD:
             update_data = progress_data.dict(exclude_unset=True)
             for key, value in update_data.items():
                 setattr(progress, key, value)
-
             # Update timestamps
             if update_data.get('is_started') and not progress.started_at:
                 progress.started_at = datetime.now(timezone.utc)
             if update_data.get('is_completed') and not progress.completed_at:
                 progress.completed_at = datetime.now(timezone.utc)
-
             db.commit()
             db.refresh(progress)
-        return progress
+        return LessonProgressSchema.model_validate(progress)
 
     @staticmethod
     def get_user_progress_summary(db: Session, user_id: int) -> dict:
