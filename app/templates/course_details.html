@@ -169,6 +169,7 @@ async function loadCourseData() {
 }
 
 async function reviewDueWords() {
+    // TODO: update review session handling
     try {
         const response = await fetch('/api/v1/reviews/due?limit=20', {
             headers: createAuthHeaders()
