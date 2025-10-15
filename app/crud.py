@@ -243,3 +243,7 @@ class LessonProgressCRUD:
             "total_words": total_words,
             "words_due_for_review": words_due
         }
+
+    @staticmethod
+    def get_lessons_progresses(db: Session, user_id: int) -> List[LessonProgressSchema]:
+        return db.query(LessonProgress).filter(LessonProgress.user_id == user_id).all()

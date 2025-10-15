@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Your Progress{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1>📊 Your Progress</h1>
+    <p>Track your learning journey</p>
+</div>
+
+<div id="stats-content">
+    <div style="text-align: center; padding: 40px;">
+        <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+        <p style="margin-top: 16px;">Loading stats...</p>
+    </div>
+</div>
+
+<a href="/" class="btn btn-secondary">← Back to Home</a>
+{% endblock %}
+
+{% block scripts %}
+async function loadStats() {
+    try {
+        const response = await fetch('/api/v1/users/progress', {
+            headers: createAuthHeaders()
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to load stats');
+        }
+
+        const stats = await response.json();
+        const statsContent = document.getElementById('stats-content');
+
+        if (stats.total_words === 0) {
+            statsContent.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📈</div>
+                    <h3>No learning data yet</h3>
+                    <p>Start learning to see your progress here!</p>
+                </div>
+            `;
+        } else {
+            const completionRate = stats.total_lessons > 0
+                ? Math.round((stats.completed_lessons / stats.total_lessons) * 100)
+                : 0;
+
+            statsContent.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.total_lessons || 0}</div>
+                        <div class="stat-label">Total Lessons</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.completed_lessons || 0}</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.total_words || 0}</div>
+                        <div class="stat-label">Learned Words</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.words_due_for_review || 0}</div>
+                        <div class="stat-label">Due for Review</div>
+                    </div>
+                </div>
+
+                ${stats.total_lessons > 0 ? `
+                    <div class="card">
+                        <h3 style="margin-bottom: 12px;">Completion Rate</h3>
+                        <div class="progress-bar" style="height: 24px;">
+                            <div class="progress-fill" style="width: ${completionRate}%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
+                                ${completionRate}%
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading stats:', error);
+        document.getElementById('stats-content').innerHTML = `
+            <div class="card" style="background: #f8d7da; color: #721c24;">
+                <h3>Error loading stats</h3>
+                <p>Please try again</p>
+            </div>
+        `;
+    }
+}
+
+// Load stats on page load
+loadStats();
+{% endblock %}

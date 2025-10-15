@@ -128,6 +128,16 @@ async def completion_page(
     })
 
 
+@app.get("/stats", response_class=HTMLResponse)
+async def stats_page(
+    request: Request
+):
+    """Stats page - data loaded via JavaScript"""
+    return templates.TemplateResponse("stats.html", {
+        "request": request
+    })
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
