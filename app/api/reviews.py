@@ -1,11 +1,12 @@
-from typing import Optional, List
+from typing import Optional
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 from app.schemas import (
-    RatingEnum, ReviewSessionSchema, ReviewResultSchema, WordWithProgressSchema,
-    LessonProgressUpdateSchema, LessonProgressCreateSchema
+    RatingEnum, ReviewSessionSchema, WordWithProgressSchema,
+    LessonProgressUpdateSchema, LessonProgressCreateSchema, UserSchema
 )
 from pydantic import BaseModel
 from app.crud import UserWordCRUD, LessonProgressCRUD, LessonCRUD, WordCRUD
@@ -74,6 +75,43 @@ def update_lesson_progress(db: Session, user_id: int, lesson_id: int, learning_s
             is_completed=is_completed
         )
         LessonProgressCRUD.update_lesson_progress(db, user_id, lesson_id, progress_update)
+
+
+@router.post("/streak", response_model=dict)
+def update_user_streak_on_success(
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db)
+    ):
+    today = datetime.now(timezone.utc).date()
+
+    # Initialize counters if missing
+    current_streak = current_user.current_streak or 0
+    longest_streak = current_user.longest_streak or 0
+
+    if current_user.last_active_date is None:
+        current_streak = 1
+        longest_streak = max(longest_streak, current_streak)
+        current_user.last_active_date = today
+    elif current_user.last_active_date == today:
+        # Already counted today; no change
+        pass
+    else:
+        # If the user was active exactly yesterday, continue the streak
+        if (today.toordinal() - current_user.last_active_date.toordinal()) == 1:
+            current_streak = current_streak + 1
+        else:
+            # Missed at least one day, reset streak
+            current_streak = 1
+        longest_streak = max(longest_streak, current_streak)
+        current_user.last_active_date = today
+
+    current_user.current_streak = current_streak
+    current_user.longest_streak = longest_streak
+    db.commit()
+    db.refresh(current_user)
+    return {
+        "current_streak": current_streak,
+    }
 
 
 # TODO: move this to schemas
@@ -225,26 +263,6 @@ async def rate_word_simple(
                 rating_data.lesson_id,
                 learning_service
             )
-
-        # Get updated progress
-        # progress = learning_service.get_word_progress(updated_user_word)
-        # print(f"DEBUG: Word progress - next_review_at: {progress.get('next_review_at')}")
-        #
-        # return ReviewResultSchema(
-        #     word_id=rating_data.word_id,
-        #     rating=rating_enum,
-        #     success=rating_enum in [RatingEnum.GOOD, RatingEnum.EASY],
-        #     next_review_at=progress.get("next_review_at"),
-        #     fsrs_card_data=updated_user_word.fsrs_card_data,
-        #     review_log={
-        #         "id": review.id,
-        #         "review_datetime": review.review_datetime,
-        #         "scheduled_days": review.scheduled_days,
-        #         "elapsed_days": review.elapsed_days,
-        #         "review": review.review,
-        #         "lapses": review.lapses
-        #     } if review else {}
-        # )
         return
 
     except Exception as e:
@@ -257,7 +275,7 @@ async def rate_word_simple(
         )
 
 
-@router.post("/word/{word_id}/review", response_model=ReviewResultSchema)
+@router.post("/word/{word_id}/review")
 async def review_word(
         word_id: int,
         rating: RatingEnum,
@@ -296,25 +314,7 @@ async def review_word(
     )
     print(f"DEBUG: Review completed - updated_user_word: {updated_user_word is not None}, review: {review is not None}")
 
-    # Get updated progress
-    progress = learning_service.get_word_progress(updated_user_word)
-    print(f"DEBUG: Word progress - next_review_at: {progress['next_review_at']}")
-
-    return ReviewResultSchema(
-        word_id=word_id,
-        rating=rating,
-        success=rating in [RatingEnum.GOOD, RatingEnum.EASY],
-        next_review_at=progress["next_review_at"],
-        fsrs_card_data=updated_user_word.fsrs_card_data,
-        review_log={
-            "id": review.id,
-            "review_datetime": review.review_datetime,
-            "scheduled_days": review.scheduled_days,
-            "elapsed_days": review.elapsed_days,
-            "review": review.review,
-            "lapses": review.lapses
-        }
-    )
+    return
 
 
 @router.get("/progress/word/{word_id}", response_model=dict)

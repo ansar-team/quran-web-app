@@ -1,17 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Lesson Complete!{% endblock %}
+{% block title %}{% if not lesson_id %}Practice Complete!{% else %}Lesson Complete!{% endif %}{% endblock %}
 
 {% block content %}
 <div class="header">
-    <h1>🎉 Lesson Complete!</h1>
-    <p>Great job! You've mastered this lesson.</p>
+    <h1>🎉 {% if not lesson_id %}Practice Complete!{% else %}Lesson Complete!{% endif %}</h1>
+    <p>Great job! You've mastered {% if not lesson_id %}this practice session{% else %}this lesson{% endif %}.</p>
 </div>
 
 <div class="card" style="background: #d4edda; border: 2px solid #28a745;">
     <h2 style="color: #155724; margin-bottom: 16px;">Excellent Progress!</h2>
     <p style="color: #155724;">
-        You've successfully completed <strong id="completed-lesson-title">this lesson</strong>
+        You've successfully completed <strong id="completed-lesson-title">
+            {% if not lesson_id %}word repetition practice{% else %}this lesson{% endif %}
+        </strong>
     </p>
 </div>
 
@@ -23,6 +25,10 @@
     <div class="stat-card">
         <div class="stat-number" id="words-learned">0</div>
         <div class="stat-label">Words Learned</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" id="streak-count">1</div>
+        <div class="stat-label">Day Streak</div>
     </div>
 </div>
 
@@ -45,34 +51,62 @@
 {% endblock %}
 
 {% block scripts %}
-const lessonId = {{ lesson_id }};
+const lessonId = {{ lesson_id if lesson_id else 'null' }};
 
 async function loadCompletionData() {
     try {
-        const lessonResponse = await fetch(`/api/v1/lessons/${lessonId}`, {
-            headers: createAuthHeaders()
-        });
+        await updateStreak();
 
-        if (!lessonResponse.ok) {
-            throw new Error('Failed to load lesson');
-        }
+        if (lessonId) {
+            const lessonResponse = await fetch(`/api/v1/lessons/${lessonId}`, {
+                headers: createAuthHeaders()
+            });
 
-        const lesson = await lessonResponse.json();
-        document.getElementById('completed-lesson-title').textContent = lesson.title;
-        document.getElementById('continue-btn').href = `/courses/${lesson.course_id}`;
+            if (!lessonResponse.ok) {
+                throw new Error('Failed to load lesson');
+            }
 
-        // Load lesson progress to get accurate stats
-        const progressResponse = await fetch(`/api/v1/reviews/progress/lesson/${lessonId}`, {
-            headers: createAuthHeaders()
-        });
+            const lesson = await lessonResponse.json();
+            document.getElementById('completed-lesson-title').textContent = lesson.title;
+            document.getElementById('continue-btn').href = `/courses/${lesson.course_id}`;
 
-        if (progressResponse.ok) {
-            const progress = await progressResponse.json();
-            document.getElementById('words-studied').textContent = progress.total_words;
-            document.getElementById('words-learned').textContent = progress.words_learned;
+            // Load lesson progress to get accurate stats
+            const progressResponse = await fetch(`/api/v1/reviews/progress/lesson/${lessonId}`, {
+                headers: createAuthHeaders()
+            });
+
+            if (progressResponse.ok) {
+                const progress = await progressResponse.json();
+                document.getElementById('words-studied').textContent = progress.total_words;
+                document.getElementById('words-learned').textContent = progress.words_learned;
+            }
+        } else {
+            // For repetition, you might want to load different stats
+            // document.getElementById('words-learned').textContent = '8';
+            document.getElementById('stats-grid').style.display = 'none';
         }
     } catch (error) {
         console.error('Error loading completion data:', error);
+    }
+}
+
+async function updateStreak() {
+    try {
+        const response = await fetch('/api/v1/reviews/streak', {
+            method: 'POST',
+            headers: createAuthHeaders()
+        });
+
+        if (!response.ok) {
+            console.error('Failed to update streak');
+        }
+
+        if (response.ok) {
+            const streakData = await response.json();
+            document.getElementById('streak-count').textContent = streakData.current_streak;
+        }
+    } catch (error) {
+        console.error('Error updating streak:', error);
     }
 }
 

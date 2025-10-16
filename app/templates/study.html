@@ -247,7 +247,7 @@ async function rateWord(rating) {
 function completeLesson() {
     tg.HapticFeedback.notificationOccurred('success');
     if (isDueReview) {
-        location.href = '/courses';
+        location.href = '/lessons/0/complete';
     } else {
         location.href = `/lessons/${lessonId}/complete`;
     }
