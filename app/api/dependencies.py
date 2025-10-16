@@ -7,7 +7,7 @@ from app import schemas
 from app.crud import UserCRUD
 from app.database import get_db
 from app.config import settings
-from app.models import User
+from app.schemas import UserSchema
 from app.utils.telegram import extract_telegram_init_data, verify_telegram_webapp_data
 
 security = HTTPBearer()
@@ -17,7 +17,7 @@ def get_current_user(
         authorization: Optional[str] = Header(None),
         # init_data: str = Depends(security),
         db: Session = Depends(get_db)
-) -> User:
+) -> UserSchema:
     """
     Get current user from Telegram WebApp init data
     """
@@ -56,7 +56,7 @@ def get_current_user(
             return existing_user
         else:
             # Create new user
-            user_create = schemas.UserCreate(
+            user_create = schemas.UserCreateSchema(
                 telegram_id=telegram_id,
                 username=username,
                 first_name=user_data.get("first_name"),

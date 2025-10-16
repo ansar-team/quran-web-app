@@ -124,7 +124,7 @@ async def completion_page(
     """Lesson completion page - data loaded via JavaScript"""
     return templates.TemplateResponse("completion.html", {
         "request": request,
-        "lesson_id": lesson_id
+        "lesson_id": lesson_id if lesson_id != 0 else None
     })
 
 

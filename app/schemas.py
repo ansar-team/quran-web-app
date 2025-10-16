@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
-from datetime import datetime
+from datetime import datetime, date
 from enum import IntEnum
 
 
@@ -32,6 +32,9 @@ class UserCreateSchema(UserBaseSchema):
 
 class UserSchema(UserBaseSchema):
     id: int
+    current_streak: int = 0
+    longest_streak: int = 0
+    last_active_date: Optional[date] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 
