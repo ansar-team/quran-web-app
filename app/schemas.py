@@ -1,10 +1,24 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 from datetime import datetime
+from enum import IntEnum
+
+
+class RatingEnum(IntEnum):
+    AGAIN = 1
+    HARD = 2
+    GOOD = 3
+    EASY = 4
+
+
+class StateEnum(IntEnum):
+    LEARNING = 1
+    REVIEW = 2
+    RELEARNING = 3
 
 
 # Base schemas
-class UserBase(BaseModel):
+class UserBaseSchema(BaseModel):
     telegram_id: int
     username: Optional[str] = None
     first_name: Optional[str] = None
@@ -12,11 +26,11 @@ class UserBase(BaseModel):
     language_code: str = "en"
 
 
-class UserCreate(UserBase):
+class UserCreateSchema(UserBaseSchema):
     pass
 
 
-class User(UserBase):
+class UserSchema(UserBaseSchema):
     id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
@@ -26,7 +40,7 @@ class User(UserBase):
 
 
 # Telegram Mini App specific schemas
-class TelegramUser(BaseModel):
+class TelegramUserSchema(BaseModel):
     id: int
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -34,23 +48,23 @@ class TelegramUser(BaseModel):
     language_code: Optional[str] = None
 
 
-class CourseBase(BaseModel):
+class CourseBaseSchema(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
     language: str = Field(..., min_length=2, max_length=10)
     native_language: str = Field(..., min_length=2, max_length=10)
 
 
-class CourseCreate(CourseBase):
+class CourseCreateSchema(CourseBaseSchema):
     pass
 
 
-class CourseUpdate(BaseModel):
+class CourseUpdateSchema(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
 
 
-class Course(CourseBase):
+class CourseSchema(CourseBaseSchema):
     id: int
     user_id: int
     created_at: datetime
@@ -60,23 +74,23 @@ class Course(CourseBase):
         from_attributes = True
 
 
-class LessonBase(BaseModel):
+class LessonBaseSchema(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
     order_index: int = Field(..., ge=1)
 
 
-class LessonCreate(LessonBase):
+class LessonCreateSchema(LessonBaseSchema):
     course_id: int
 
 
-class LessonUpdate(BaseModel):
+class LessonUpdateSchema(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
     is_completed: Optional[bool] = None
 
 
-class Lesson(LessonBase):
+class LessonSchema(LessonBaseSchema):
     id: int
     course_id: int
     is_completed: bool
@@ -87,7 +101,7 @@ class Lesson(LessonBase):
         from_attributes = True
 
 
-class WordBase(BaseModel):
+class WordBaseSchema(BaseModel):
     text: str = Field(..., min_length=1, max_length=200)
     translation: str = Field(..., min_length=1, max_length=500)
     pronunciation: Optional[str] = None
@@ -96,11 +110,11 @@ class WordBase(BaseModel):
     order_index: int = Field(..., ge=1)
 
 
-class WordCreate(WordBase):
+class WordCreateSchema(WordBaseSchema):
     pass
 
 
-class WordUpdate(BaseModel):
+class WordUpdateSchema(BaseModel):
     text: Optional[str] = Field(None, min_length=1, max_length=200)
     translation: Optional[str] = Field(None, min_length=1, max_length=500)
     pronunciation: Optional[str] = None
@@ -108,7 +122,7 @@ class WordUpdate(BaseModel):
     difficulty_level: Optional[int] = Field(None, ge=1, le=5)
 
 
-class Word(WordBase):
+class WordSchema(WordBaseSchema):
     id: int
     lesson_id: int
     created_at: datetime
@@ -118,19 +132,137 @@ class Word(WordBase):
         from_attributes = True
 
 
-class LessonWithWords(Lesson):
-    words: List[Word] = []
+class UserWordBaseSchema(BaseModel):
+    word_id: int
+    fsrs_card_data: Dict[str, Any]
 
 
-class CourseWithLessons(Course):
-    lessons: List[Lesson] = []
+class UserWordCreateSchema(UserWordBaseSchema):
+    pass
 
 
-class CourseWithLessonsAndWords(Course):
-    lessons: List[LessonWithWords] = []
+class UserWordUpdateSchema(BaseModel):
+    fsrs_card_data: Optional[Dict[str, Any]] = None
 
 
-class SuccessResponse(BaseModel):
+class UserWordSchema(UserWordBaseSchema):
+    id: int
+    user_id: int
+    total_reviews: int
+    correct_reviews: int
+    last_reviewed_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ReviewBaseSchema(BaseModel):
+    rating: RatingEnum
+    response_time_seconds: Optional[float] = None
+    lesson_context: Optional[int] = None
+
+
+class ReviewCreateSchema(ReviewBaseSchema):
+    pass
+
+
+class ReviewSchema(ReviewBaseSchema):
+    id: int
+    user_word_id: int
+    review_datetime: datetime
+    scheduled_days: Optional[int] = None
+    elapsed_days: Optional[int] = None
+    review: Optional[int] = None
+    lapses: Optional[int] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class LessonProgressBaseSchema(BaseModel):
+    lesson_id: int
+    words_learned: int = 0
+    words_to_review: int = 0
+    total_words: int
+
+
+class LessonProgressCreateSchema(LessonProgressBaseSchema):
+    is_started: Optional[bool] = None
+    is_completed: Optional[bool] = None
+
+
+class LessonProgressUpdateSchema(BaseModel):
+    words_learned: Optional[int] = None
+    words_to_review: Optional[int] = None
+    total_words: Optional[int] = None
+    is_started: Optional[bool] = None
+    is_completed: Optional[bool] = None
+
+
+class LessonProgressSchema(LessonProgressBaseSchema):
+    id: int
+    user_id: int
+    is_started: bool
+    is_completed: bool
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+# Complex schemas for API responses
+class LessonWithWordsSchema(LessonSchema):
+    words: List[WordSchema] = []
+
+
+class CourseWithLessonsSchema(CourseSchema):
+    lessons: List[LessonSchema] = []
+
+
+class CourseWithLessonsAndWordsSchema(CourseSchema):
+    lessons: List[LessonWithWordsSchema] = []
+
+
+class WordWithProgressSchema(WordSchema):
+    user_word: Optional[UserWordSchema] = None
+    is_learned: bool = False
+    is_due_for_review: bool = False
+    next_review_at: Optional[datetime] = None
+
+
+class ReviewSessionSchema(BaseModel):
+    """Represents a review session with words to review"""
+    lesson_id: int
+    words_to_review: List[WordWithProgressSchema]
+    new_words: List[WordWithProgressSchema]
+    total_words: int
+    session_type: str  # "new_lesson", "review_old", "mixed"
+
+
+class ReviewResultSchema(BaseModel):
+    """Result of reviewing a word"""
+    word_id: int
+    rating: RatingEnum
+    success: bool
+    next_review_at: Optional[datetime] = None
+    fsrs_card_data: Dict[str, Any] = {}
+    review_log: Dict[str, Any] = {}
+
+
+class TelegramWebhookDataSchema(BaseModel):
+    user: TelegramUserSchema
+    query_id: Optional[str] = None
+    auth_date: int
+    hash: str
+
+
+class SuccessResponseSchema(BaseModel):
     success: bool
     message: Optional[str] = None
     data: Optional[Dict[str, Any]] = None

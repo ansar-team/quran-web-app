@@ -43,7 +43,6 @@
 const lessonId = {{ lesson_id }};
 
 // Set add word button URL
-// TODO: pass lesson info to this endpoint
 document.getElementById('add-word-btn').href = `/lessons/${lessonId}/words/create`;
 let courseId = null;
 
@@ -65,16 +64,31 @@ async function loadLessonData() {
         document.getElementById('lesson-description').textContent = lesson.description || '';
         document.getElementById('back-to-course').href = `/courses/${courseId}`;
 
-        // Load words
-        const wordsResponse = await fetch(`/api/v1/words/lesson/${lessonId}`, {
-            headers: createAuthHeaders()
-        });
+        // Load lesson progress
+        try {
+            const progressResponse = await fetch(`/api/v1/reviews/progress/lesson/${lessonId}`, {
+                headers: createAuthHeaders()
+            });
 
-        if (!wordsResponse.ok) {
-            throw new Error('Failed to load words');
+            if (progressResponse.ok) {
+                const progress = await progressResponse.json();
+                document.getElementById('total-words').textContent = progress.total_words || 0;
+                document.getElementById('learned-count').textContent = progress.words_learned || 0;
+
+                // Show completion badge if completed
+                if (progress.is_completed) {
+                    const titleElement = document.getElementById('lesson-title');
+                    titleElement.innerHTML = titleElement.textContent + ' <span class="badge badge-success">✓ Completed</span>';
+                }
+            } else {
+                // No progress yet - will be updated after loading words
+                console.log('No progress data yet for lesson:', lessonId);
+            }
+        } catch (error) {
+            console.error('Error loading lesson progress:', error);
         }
 
-        const words = await wordsResponse.json();
+        const words = lesson.words;
         document.getElementById('total-words').textContent = words.length;
 
         const wordsList = document.getElementById('words-list');

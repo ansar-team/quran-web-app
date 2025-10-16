@@ -81,11 +81,12 @@ document.getElementById('lesson-form').addEventListener('submit', async (e) => {
             body: JSON.stringify(formData)
         });
 
+        // TODO: remove haptic feedback
         if (response.ok) {
             const lesson = await response.json();
             tg.HapticFeedback.notificationOccurred('success');
             tg.showAlert('Lesson created successfully!', () => {
-                location.href = '/courses/${courseId}';
+                location.href = `/courses/${courseId}`;
             });
         } else {
             const error = await response.json();

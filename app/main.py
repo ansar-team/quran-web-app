@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from app.database import engine
 from app.models import Base
-from app.api import courses, lessons, words, users, telegram_auth
+from app.api import courses, lessons, words, users, reviews, telegram_auth
 
 
 # Create database tables
@@ -34,6 +34,7 @@ app.include_router(courses.router, prefix="/api/v1")
 app.include_router(lessons.router, prefix="/api/v1")
 app.include_router(words.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
+app.include_router(reviews.router, prefix="/api/v1")
 app.include_router(telegram_auth.router, prefix="/api/v1")
 
 @app.get("/", response_class=HTMLResponse)
@@ -100,6 +101,51 @@ async def create_word_page(
     return templates.TemplateResponse("create_word.html", {
         "request": request,
         "lesson_id": lesson_id
+    })
+
+
+@app.get("/study/{lesson_id}", response_class=HTMLResponse)
+async def study_page(
+    lesson_id: int,
+    request: Request
+):
+    """Study session page - data loaded via JavaScript"""
+    return templates.TemplateResponse("study.html", {
+        "request": request,
+        "lesson_id": lesson_id
+    })
+
+
+@app.get("/lessons/{lesson_id}/complete", response_class=HTMLResponse)
+async def completion_page(
+    lesson_id: int,
+    request: Request
+):
+    """Lesson completion page - data loaded via JavaScript"""
+    return templates.TemplateResponse("completion.html", {
+        "request": request,
+        "lesson_id": lesson_id
+    })
+
+
+@app.get("/review/due", response_class=HTMLResponse)
+async def review_due_page(
+    request: Request
+):
+    """Review due words session page - data loaded via JavaScript"""
+    return templates.TemplateResponse("study.html", {
+        "request": request,
+        "lesson_id": None  # Special case for due review
+    })
+
+
+@app.get("/stats", response_class=HTMLResponse)
+async def stats_page(
+    request: Request
+):
+    """Stats page - data loaded via JavaScript"""
+    return templates.TemplateResponse("stats.html", {
+        "request": request
     })
 
 

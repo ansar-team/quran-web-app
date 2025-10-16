@@ -65,16 +65,21 @@ async function loadCourseData() {
         document.getElementById('course-title').textContent = course.title;
         document.getElementById('course-description').textContent = course.description || '';
 
-        // Load lessons
-        const lessonsResponse = await fetch(`/api/v1/lessons/course/${courseId}`, {
-            headers: createAuthHeaders()
-        });
+        const lessons = course.lessons;
 
-        if (!lessonsResponse.ok) {
-            throw new Error('Failed to load lessons');
+        // Load due words count
+        try {
+            const dueWordsResponse = await fetch('/api/v1/reviews/due?limit=20', {
+                headers: createAuthHeaders()
+            });
+            if (dueWordsResponse.ok) {
+                const dueWords = await dueWordsResponse.json();
+                document.getElementById('due-words-count').textContent = dueWords.words.length;
+            }
+        } catch (error) {
+            console.error('Error loading due words count:', error);
         }
 
-        const lessons = await lessonsResponse.json();
         const lessonsList = document.getElementById('lessons-list');
 
         if (lessons.length === 0) {
@@ -86,22 +91,83 @@ async function loadCourseData() {
                 </div>
             `;
         } else {
+            // Display lessons first (without waiting for progress)
             lessonsList.innerHTML = lessons.map(lesson => `
-                <a href="/lessons/${lesson.id}" class="card-link" style="text-decoration: none; color: inherit;">
-                <div class="card lesson-item ${lesson.is_completed ? 'completed' : ''}">
+                <a href="/lessons/${lesson.id}"
+                   class="card-link"
+                   style="text-decoration: none; color: inherit; cursor: pointer;"
+                   data-lesson-id="${lesson.id}"
+                >
+                <div class="card lesson-item">
                     <h3>
                         ${lesson.title}
-                        ${lesson.is_completed ? '<span class="badge badge-success">✓ Completed</span>' : ''}
+                        <span class="lesson-status-${lesson.id}"></span>
                     </h3>
                     <p style="margin: 8px 0; color: var(--tg-theme-hint-color, #666);">
                         ${lesson.description || 'No description'}
                     </p>
                     <p style="font-size: 14px; color: var(--tg-theme-hint-color, #666);">
-                        Lesson ${lesson.order_index}
+                        Lesson ${lesson.order_index} • <span class="lesson-progress-${lesson.id}">Loading...</span>
                     </p>
+                    <div class="lesson-progress-bar-${lesson.id}"></div>
                 </div>
                 </a>
             `).join('');
+
+            // Load progress for each lesson asynchronously
+            lessons.forEach(async lesson => {
+                try {
+                    const progressResponse = await fetch(`/api/v1/reviews/progress/lesson/${lesson.id}`, {
+                        headers: createAuthHeaders()
+                    });
+
+                    if (progressResponse.ok) {
+                        const progress = await progressResponse.json();
+                        const isCompleted = progress.is_completed || false;
+                        const progressPercentage = progress.progress_percentage || 0;
+                        const wordsLearned = progress.words_learned || 0;
+                        const totalWords = progress.total_words || 0;
+
+                        // Update status badge
+                        const statusElement = document.querySelector(`.lesson-status-${lesson.id}`);
+                        if (statusElement && isCompleted) {
+                            statusElement.innerHTML = '<span class="badge badge-success">✓ Completed</span>';
+                            // Add completed class to card
+                            const card = document.querySelector(`[data-lesson-id="${lesson.id}"]`);
+                            if (card) card.classList.add('completed');
+                        }
+
+                        // Update progress text
+                        const progressTextElement = document.querySelector(`.lesson-progress-${lesson.id}`);
+                        if (progressTextElement) {
+                            progressTextElement.textContent = `${wordsLearned}/${totalWords} words learned`;
+                        }
+
+                        // Update progress bar
+                        const progressBarElement = document.querySelector(`.lesson-progress-bar-${lesson.id}`);
+                        if (progressBarElement && progressPercentage > 0) {
+                            progressBarElement.innerHTML = `
+                                <div class="progress-bar" style="margin-top: 8px;">
+                                    <div class="progress-fill" style="width: ${progressPercentage}%;"></div>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        // No progress yet - show 0/total
+                        const progressTextElement = document.querySelector(`.lesson-progress-${lesson.id}`);
+                        if (progressTextElement) {
+                            progressTextElement.textContent = `0/${lesson.words?.length || 0} words learned`;
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error loading progress for lesson ${lesson.id}:`, error);
+                    // Show default state on error
+                    const progressTextElement = document.querySelector(`.lesson-progress-${lesson.id}`);
+                    if (progressTextElement) {
+                        progressTextElement.textContent = 'Not started';
+                    }
+                }
+            });
 
             // Add haptic feedback
             document.querySelectorAll('.lesson-item').forEach(item => {
@@ -117,23 +183,8 @@ async function loadCourseData() {
 }
 
 async function reviewDueWords() {
-    try {
-        const response = await fetch('/api/v1/reviews/due?limit=20', {
-            headers: createAuthHeaders()
-        });
-
-        if (response.ok) {
-            const dueWords = await response.json();
-            if (dueWords.length === 0) {
-                tg.showAlert('No words due for review right now!');
-            } else {
-                tg.showAlert('Review session coming soon!');
-            }
-        }
-    } catch (error) {
-        console.error('Error loading due words:', error);
-        tg.showAlert('Failed to load due words');
-    }
+    console.log('moves to study page');
+    location.href = '/review/due';
 }
 
 // Load data on page load
