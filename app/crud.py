@@ -28,7 +28,11 @@ class UserCRUD:
     def update_user(db: Session, user_id: int, **kwargs) -> Optional[UserSchema]:
         user = db.query(User).filter(User.id == user_id).first()
         if user:
+            # Disallow streak fields from being updated via generic user update
+            disallowed = {"current_streak", "longest_streak", "last_active_date"}
             for key, value in kwargs.items():
+                if key in disallowed:
+                    continue
                 setattr(user, key, value)
             db.commit()
             db.refresh(user)
