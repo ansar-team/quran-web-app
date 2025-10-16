@@ -163,3 +163,20 @@ class WordLearningService:
             "correct_reviews": user_word.correct_reviews,
             "accuracy_rate": user_word.correct_reviews / user_word.total_reviews if user_word.total_reviews > 0 else 0
         }
+
+
+    def get_words_due_for_review(self, user_id: int, limit: int = 20) -> list[UserWordSchema]:
+        """Get words that are due for review"""
+        user_words = self.db.query(UserWord).filter(
+            UserWord.user_id == user_id
+        ).all()
+
+        due_words = []
+        for user_word in user_words:
+            if self.fsrs_manager.is_card_due(UserWordSchema.model_validate(user_word)):
+                due_words.append(UserWordSchema.model_validate(user_word))
+
+        # Sort by due time (earliest first)
+        due_words.sort(key=lambda uw: self.fsrs_manager.get_next_review_time(uw))
+
+        return due_words[:limit]

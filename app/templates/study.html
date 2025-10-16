@@ -136,25 +136,39 @@
 {% endblock %}
 
 {% block scripts %}
-const lessonId = {{ lesson_id }};
+const lessonId = {{ lesson_id if lesson_id else 'null' }};
 let words = [];
 let currentWordIndex = 0;
+let isDueReview = lessonId === null;
 
 async function loadStudyData() {
     try {
-        const response = await fetch(`/api/v1/reviews/session/lesson/${lessonId}`, {
-            headers: createAuthHeaders()
-        });
+        let response;
+        if (isDueReview) {
+            response = await fetch('/api/v1/reviews/due', {
+                headers: createAuthHeaders()
+            });
+        } else {
+            response = await fetch(`/api/v1/reviews/session/lesson/${lessonId}`, {
+                headers: createAuthHeaders()
+            });
+        }
 
         if (!response.ok) {
             throw new Error('Failed to load study session');
         }
 
         const session = await response.json();
-        words = [...session.words_to_review, ...session.new_words];
+
+        if (isDueReview) {
+            words = session.words || [];
+        } else {
+            words = [...session.words_to_review, ...session.new_words];
+        }
 
         if (words.length === 0) {
-            tg.showAlert('No words to study in this lesson');
+            const message = isDueReview ? 'No words due for review right now!' : 'No words to study in this lesson';
+            tg.showAlert(message);
             history.back();
             return;
         }
@@ -232,19 +246,32 @@ async function rateWord(rating) {
 
 function completeLesson() {
     tg.HapticFeedback.notificationOccurred('success');
-    location.href = `/lessons/${lessonId}/complete`;
+    if (isDueReview) {
+        location.href = '/courses';
+    } else {
+        location.href = `/lessons/${lessonId}/complete`;
+    }
 }
 
 function confirmExit() {
     tg.showConfirm('Exit study session? Your progress will be saved.', (confirmed) => {
         if (confirmed) {
-            location.href = `/lessons/${lessonId}`;
+            if (isDueReview) {
+                location.href = '/courses';
+            } else {
+                location.href = `/lessons/${lessonId}`;
+            }
         }
     });
 }
 
 // Mark lesson as started when study begins
 async function markLessonStarted() {
+    if (isDueReview) {
+        // No need to mark due review as started
+        return;
+    }
+
     try {
         await fetch(`/api/v1/reviews/lesson/${lessonId}/start`, {
             method: 'POST',

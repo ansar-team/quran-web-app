@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -445,3 +445,34 @@ async def start_lesson(
         "is_started": lesson_progress.is_started,
         "message": "Lesson started successfully"
     }
+
+
+# TODO: define response model
+@router.get("/due", response_model=dict)
+async def get_words_due_for_review(
+        limit: int = 20,
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db)
+):
+    """Get all words due for review across all lessons"""
+    print(f"DEBUG: get_words_due_for_review called - limit: {limit}, user_id: {current_user.id}")
+
+    learning_service = WordLearningService(db)
+
+    # Get words due for review
+    due_user_words = learning_service.get_words_due_for_review(current_user.id, limit)
+    print(f"DEBUG: Found {len(due_user_words)} due words")
+
+    result = []
+    for user_word in due_user_words:
+        word = WordCRUD.get_word(db, user_word.word_id, current_user.id)
+        if word:
+            progress = learning_service.get_word_progress(user_word)
+            result.append(WordWithProgressSchema(
+                **word.__dict__,
+                user_word=user_word,
+                is_learned=progress["state"] == 2,
+                is_due_for_review=progress["is_due"],
+                next_review_at=progress["next_review_at"]
+            ).__dict__)
+    return {"words": result}

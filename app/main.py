@@ -128,6 +128,17 @@ async def completion_page(
     })
 
 
+@app.get("/review/due", response_class=HTMLResponse)
+async def review_due_page(
+    request: Request
+):
+    """Review due words session page - data loaded via JavaScript"""
+    return templates.TemplateResponse("study.html", {
+        "request": request,
+        "lesson_id": None  # Special case for due review
+    })
+
+
 @app.get("/stats", response_class=HTMLResponse)
 async def stats_page(
     request: Request

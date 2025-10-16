@@ -66,6 +66,20 @@ async function loadCourseData() {
         document.getElementById('course-description').textContent = course.description || '';
 
         const lessons = course.lessons;
+
+        // Load due words count
+        try {
+            const dueWordsResponse = await fetch('/api/v1/reviews/due?limit=20', {
+                headers: createAuthHeaders()
+            });
+            if (dueWordsResponse.ok) {
+                const dueWords = await dueWordsResponse.json();
+                document.getElementById('due-words-count').textContent = dueWords.words.length;
+            }
+        } catch (error) {
+            console.error('Error loading due words count:', error);
+        }
+
         const lessonsList = document.getElementById('lessons-list');
 
         if (lessons.length === 0) {
@@ -169,24 +183,8 @@ async function loadCourseData() {
 }
 
 async function reviewDueWords() {
-    // TODO: update review session handling
-    try {
-        const response = await fetch('/api/v1/reviews/due?limit=20', {
-            headers: createAuthHeaders()
-        });
-
-        if (response.ok) {
-            const dueWords = await response.json();
-            if (dueWords.length === 0) {
-                tg.showAlert('No words due for review right now!');
-            } else {
-                tg.showAlert('Review session coming soon!');
-            }
-        }
-    } catch (error) {
-        console.error('Error loading due words:', error);
-        tg.showAlert('Failed to load due words');
-    }
+    console.log('moves to study page');
+    location.href = '/review/due';
 }
 
 // Load data on page load
