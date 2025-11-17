@@ -152,7 +152,7 @@ async def stats_page(
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "version": "1.0.0"}
+    return {"status": "ok", "version": "1.0.0"}
 
 
 @app.exception_handler(404)

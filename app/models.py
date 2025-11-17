@@ -101,6 +101,7 @@ class UserWord(Base):
     reviews = relationship("Review", back_populates="user_word", cascade="all, delete-orphan")
 
 
+# TODO: review is not used anywhere, except for logs
 class Review(Base):
     __tablename__ = "reviews"
 

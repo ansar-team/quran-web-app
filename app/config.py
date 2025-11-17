@@ -3,12 +3,9 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # Database
-    database_url: str = "postgresql://username:password@localhost:5432/spaced_repetition_db"
-
-    telegram_bot_token: str = "bot_token"
-
-    # Environment
-    debug: bool = True
+    database_url: str
+    telegram_bot_token: str
+    debug: bool = False
 
     class Config:
         env_file = ".env"

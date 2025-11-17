@@ -1,0 +1,10 @@
+yandex_cloud_id = "yandex_cloud_id"
+yandex_folder_id = "yandex_folder_id"
+service_account_id = "service_account_id"
+db_username = "db_username"
+db_password = "db_password"
+certificate_domains = ["enimatrix.ru"]
+telegram_bot_token = "telegram_bot_token"
+registry_id = "registry_id"
+existing_cert_id = "existing_cert_id"
+image_id = "image_id"
