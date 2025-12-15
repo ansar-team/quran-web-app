@@ -171,6 +171,35 @@
             margin-bottom: 16px;
         }
 
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--tg-theme-secondary-bg-color, #f8f9fa);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid rgba(0,0,0,0.06);
+            z-index: 100;
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: var(--tg-theme-text-color, #000000);
+            font-size: 12px;
+        }
+
+        .bottom-nav-item span:first-child {
+            font-size: 18px;
+            margin-bottom: 2px;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -220,6 +249,21 @@
         {% block content %}{% endblock %}
     </div>
 
+    <nav class="bottom-nav">
+        <a href="/courses" class="bottom-nav-item">
+            <span>📚</span>
+            <span id="nav-courses-label">Courses</span>
+        </a>
+        <a href="/stats" class="bottom-nav-item">
+            <span>📊</span>
+            <span id="nav-stats-label">Stats</span>
+        </a>
+        <a href="/settings" class="bottom-nav-item">
+            <span>⚙️</span>
+            <span id="nav-settings-label">Settings</span>
+        </a>
+    </nav>
+
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready();
@@ -231,6 +275,58 @@
                 'Authorization': `Bearer ${tg.initData}`
             };
         }
+
+        let I18N = null;
+
+        async function loadTranslations(lang) {
+            try {
+                const resp = await fetch(`/api/v1/i18n/${lang}`, {
+                    headers: createAuthHeaders()
+                });
+                if (!resp.ok) {
+                    return;
+                }
+                I18N = await resp.json();
+                window.I18N = I18N;
+                updateMenuFromI18n();
+            } catch (e) {
+                console.error('Failed to load translations', e);
+            }
+        }
+
+        function updateMenuFromI18n() {
+            if (!I18N || !I18N.menu) {
+                return;
+            }
+            const c = document.getElementById('nav-courses-label');
+            const s = document.getElementById('nav-stats-label');
+            const st = document.getElementById('nav-settings-label');
+            if (c) c.textContent = I18N.menu.courses || c.textContent;
+            if (s) s.textContent = I18N.menu.stats || s.textContent;
+            if (st) st.textContent = I18N.menu.settings || st.textContent;
+            const title = document.getElementById('welcome-title');
+        }
+
+        async function loadUserLanguage() {
+            try {
+                const response = await fetch('/api/v1/users/me', {
+                    headers: createAuthHeaders()
+                });
+                if (!response.ok) return;
+                const user = await response.json();
+                const lang = user.language_code || 'en';
+                const select = document.getElementById('language-select');
+                select.value = lang;
+                await loadTranslations(lang);
+                if (typeof updateMenuFromI18n === 'function') {
+                    updateMenuFromI18n();
+                }
+            } catch (e) {
+                console.error('Failed to load user language', e);
+            }
+        }
+
+        loadUserLanguage();
 
         {% block scripts %}{% endblock %}
     </script>

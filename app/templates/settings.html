@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1>⚙️ Settings</h1>
+    <p>Choose your language</p>
+</div>
+
+<div class="card">
+    <div class="form-group">
+        <label for="language-select">Interface language</label>
+        <select id="language-select" class="form-input">
+            <option value="en">English</option>
+            <option value="ru">Русский</option>
+            <option value="ar">العربية</option>
+        </select>
+    </div>
+
+    <button class="btn" onclick="saveLanguage()">Save</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+async function saveLanguage() {
+    const select = document.getElementById('language-select');
+    const lang = select.value;
+    try {
+        const params = new URLSearchParams({ language_code: lang });
+        const response = await fetch('/api/v1/users/me?' + params.toString(), {
+            method: 'PUT',
+            headers: createAuthHeaders()
+        });
+        if (!response.ok) {
+            tg.showAlert('Failed to save language');
+            return;
+        }
+        await loadTranslations(lang);
+        if (typeof updateMenuFromI18n === 'function') {
+            updateMenuFromI18n();
+        }
+        tg.showAlert('Language saved');
+    } catch (e) {
+        console.error('Failed to save language', e);
+        tg.showAlert('Error saving language');
+    }
+}
+{% endblock %}
+
+

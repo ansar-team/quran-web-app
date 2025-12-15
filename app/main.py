@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from app.database import engine
 from app.models import Base
-from app.api import courses, lessons, words, users, reviews, telegram_auth
+from app.api import courses, lessons, words, users, reviews, telegram_auth, i18n
 
 
 # Create database tables
@@ -36,6 +36,7 @@ app.include_router(words.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(reviews.router, prefix="/api/v1")
 app.include_router(telegram_auth.router, prefix="/api/v1")
+app.include_router(i18n.router, prefix="/api/v1")
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
@@ -145,6 +146,16 @@ async def stats_page(
 ):
     """Stats page - data loaded via JavaScript"""
     return templates.TemplateResponse("stats.html", {
+        "request": request
+    })
+
+
+@app.get("/settings", response_class=HTMLResponse)
+async def settings_page(
+    request: Request
+):
+    """User settings page"""
+    return templates.TemplateResponse("settings.html", {
         "request": request
     })
 

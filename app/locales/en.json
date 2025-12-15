@@ -1,0 +1,15 @@
+{
+  "menu": {
+    "courses": "Courses",
+    "stats": "Stats",
+    "settings": "Settings"
+  },
+  "home": {
+    "title": "Welcome!",
+    "subtitle": "This mini app helps you learn new words using the scientifically-proven spaced repetition technique.",
+    "btn_courses": "My Courses",
+    "btn_stats": "View Progress"
+  }
+}
+
+
