@@ -69,12 +69,12 @@ async def home(context=Depends(template_context)):
 
 @app.get("/courses", response_class=HTMLResponse)
 async def courses(context=Depends(template_context)):
-    return templates.TemplateResponse("courses.html", context)
+    return templates.TemplateResponse("course_list.html", context)
 
 
 @app.get("/courses/create", response_class=HTMLResponse)
 async def create_course_page(context=Depends(template_context)):
-    return templates.TemplateResponse("create_course.html", context)
+    return templates.TemplateResponse("course_create.html", context)
 
 
 @app.get("/courses/{course_id}", response_class=HTMLResponse)
@@ -92,7 +92,7 @@ async def create_lesson_page(
     context=Depends(template_context)
 ):
     context["course_id"] = course_id
-    return templates.TemplateResponse("create_lesson.html", context)
+    return templates.TemplateResponse("lesson_create.html", context)
 
 
 @app.get("/lessons/{lesson_id}", response_class=HTMLResponse)
@@ -110,7 +110,7 @@ async def create_word_page(
     context=Depends(template_context)
 ):
     context["lesson_id"] = lesson_id
-    return templates.TemplateResponse("create_word.html", context)
+    return templates.TemplateResponse("lesson_word_create.html", context)
 
 
 @app.get("/study/{lesson_id}", response_class=HTMLResponse)
@@ -119,7 +119,7 @@ async def study_page(
     context=Depends(template_context)
 ):
     context["lesson_id"] = lesson_id
-    return templates.TemplateResponse("study.html", context)
+    return templates.TemplateResponse("lesson_study.html", context)
 
 
 @app.get("/lessons/{lesson_id}/complete", response_class=HTMLResponse)
@@ -128,14 +128,14 @@ async def completion_page(
     context=Depends(template_context)
 ):
     context["lesson_id"] = lesson_id if lesson_id != 0 else None
-    return templates.TemplateResponse("completion.html", context)
+    return templates.TemplateResponse("lesson_complete.html", context)
 
 
 @app.get("/review/due", response_class=HTMLResponse)
 async def review_due_page(context=Depends(template_context)):
     # Special case for review lesson
     context["lesson_id"] = None
-    return templates.TemplateResponse("study.html", context)
+    return templates.TemplateResponse("lesson_study.html", context)
 
 
 @app.get("/stats", response_class=HTMLResponse)
