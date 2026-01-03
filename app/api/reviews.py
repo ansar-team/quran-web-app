@@ -11,7 +11,8 @@ from app.schemas import (
 from pydantic import BaseModel
 from app.crud import UserWordCRUD, LessonProgressCRUD, LessonCRUD, WordCRUD
 from app.fsrs_service import WordLearningService
-from app.api.dependencies import get_current_user
+# from app.api.dependencies import get_current_user
+from app.utils.session_store import get_current_user
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 

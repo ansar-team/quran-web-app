@@ -7,7 +7,8 @@ from app.schemas import (
     WordSchema, WordCreateSchema, WordUpdateSchema, SuccessResponseSchema
 )
 from app.crud import WordCRUD
-from app.api.dependencies import get_current_user
+# from app.api.dependencies import get_current_user
+from app.utils.session_store import get_current_user
 
 router = APIRouter(prefix="/words", tags=["words"])
 
