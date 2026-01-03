@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+    #app-loading {
+        position: fixed;
+        inset: 0;
+        background: var(--tg-theme-bg-color, #ffffff);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+    .loader {
+        width: 48px;
+        height: 48px;
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-top-color: var(--tg-theme-button-color, #3390ec);
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+    </style>
+</head>
+<body>
+<div id="app-loading">
+    <div class="loader"></div>
+</div>
+Loading...
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+async function bootstrap() {
+    const resp = await fetch("/api/v1/telegram/mini-app/auth", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${tg.initData}`
+        }
+    });
+
+    if (!resp.ok) {
+        tg.showAlert("Auth failed");
+        return;
+    }
+
+    window.location.replace("/home");
+}
+
+bootstrap();
+</script>
+</body>
+</html>

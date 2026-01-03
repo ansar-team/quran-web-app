@@ -95,7 +95,10 @@
 </div>
 
 <div style="text-align: center; margin: 16px 0; font-size: 14px; color: var(--tg-theme-hint-color, #666);">
-    Word <span id="current-word-num">1</span> of <span id="total-words">{{ words|length }}</span>
+    {{ i18n.study.word }}
+    <span id="current-word-num">1</span>
+    {{ i18n.study.of }}
+    <span id="total-words">{{ words|length }}</span>
 </div>
 
 <div class="word-study-card">
@@ -106,34 +109,46 @@
         <div class="translation-display" id="word-translation"></div>
         <div class="example-display" id="word-example"></div>
 
-        <p style="margin: 24px 0 12px 0; font-weight: 600;">How well did you remember?</p>
+        <p style="margin: 24px 0 12px 0; font-weight: 600;">
+            {{ i18n.study.how_well }}
+        </p>
+
         <div class="rating-buttons">
             <button class="rating-btn rating-easy" onclick="rateWord(4)">
-                😄 Easy
+                😄 {{ i18n.study.easy }}
             </button>
             <button class="rating-btn rating-good" onclick="rateWord(3)">
-                🙂 Good
+                🙂 {{ i18n.study.good }}
             </button>
             <button class="rating-btn rating-hard" onclick="rateWord(2)">
-                😐 Hard
+                😐 {{ i18n.study.hard }}
             </button>
             <button class="rating-btn rating-again" onclick="rateWord(1)">
-                😕 Again
+                😕 {{ i18n.study.again }}
             </button>
         </div>
+
         <p style="margin-top: 16px; font-size: 13px; color: var(--tg-theme-hint-color, #666);">
-            <strong>Hard</strong> words will appear more frequently for practice
+            <strong>{{ i18n.study.hard }}</strong>
+            {{ i18n.study.hard_hint }}
         </p>
     </div>
 
     <div id="show-answer-btn">
-        <button class="btn" onclick="showAnswer()">Show Answer</button>
-        <button class="btn btn-secondary btn-sm" onclick="skipWord()">Skip</button>
+        <button class="btn" onclick="showAnswer()">
+            {{ i18n.study.show_answer }}
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="skipWord()">
+            {{ i18n.study.skip }}
+        </button>
     </div>
 </div>
 
-<button class="btn btn-secondary" onclick="confirmExit()">Exit Study</button>
+<button class="btn btn-secondary" onclick="confirmExit()">
+    {{ i18n.study.exit }}
+</button>
 {% endblock %}
+
 
 {% block scripts %}
 const lessonId = {{ lesson_id if lesson_id else 'null' }};

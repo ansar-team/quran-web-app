@@ -4,46 +4,26 @@
 
 {% block content %}
 <div class="header">
-    <h1>🧠 Spaced Repetition Learning</h1>
-    <p>Master new words with intelligent spaced repetition</p>
+    <h1 id="project-name">{{ i18n.home.p_name }}</h1>
+    <p id="project-slogan">{{ i18n.home.p_slogan }}</p>
 </div>
 
 <div class="card">
-    <h2>Welcome!</h2>
-    <p style="margin: 16px 0; color: var(--tg-theme-hint-color, #666);">
-        This mini app helps you learn new words using the scientifically-proven spaced repetition technique.
+    <h2 id="welcome-title">{{ i18n.home.title }}</h2>
+    <p id="welcome-subtitle" style="margin: 16px 0; color: var(--tg-theme-hint-color, #666);">
+        {{ i18n.home.subtitle }}
     </p>
-    <a href="/courses" class="btn" id="courses-link">📚 My Courses</a>
-    <a href="/stats" class="btn btn-secondary">📊 View Progress</a>
+    <a href="/courses" class="btn" id="courses-link">📚 <span id="btn-courses-label">{{ i18n.home.btn_courses }}</span></a>
+    <a href="/stats" class="btn btn-secondary">📊 <span id="btn-stats-label">{{ i18n.home.btn_stats }}</span></a>
 </div>
 
-<div class="card" style="background: #e8f5e9;">
-    <h3 style="margin-bottom: 12px;">🎯 How it works</h3>
+<div class="card" style="background: #47732f; margin-bottom: 58px">
+    <h3 id="guide-title" style="margin-bottom: 12px;">{{ i18n.home.guide_t }}</h3>
     <ol style="padding-left: 20px; line-height: 1.8;">
-        <li>Choose a course and lesson to study</li>
-        <li>Learn new words by rating your memory</li>
-        <li>Review words that need more practice</li>
-        <li>Words appear at optimal intervals for retention</li>
+        <li id="g-1">{{ i18n.home.g1 }}</li>
+        <li id="g-2">{{ i18n.home.g2 }}</li>
+        <li id="g-3">{{ i18n.home.g3 }}</li>
+        <li id="g-4">{{ i18n.home.g4 }}</li>
     </ol>
 </div>
-{% endblock %}
-
-{% block scripts %}
-// Auto-authenticate user and setup links
-async function initApp() {
-    try {
-        const response = await fetch('/api/v1/telegram/mini-app/auth', {
-            method: 'POST',
-            headers: createAuthHeaders()
-        });
-
-        if (!response.ok) {
-            tg.showAlert('Authentication failed');
-        }
-    } catch (error) {
-        console.error('Init error:', error);
-    }
-}
-
-initApp();
 {% endblock %}

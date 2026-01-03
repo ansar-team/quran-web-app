@@ -4,13 +4,13 @@
 
 {% block content %}
 <div class="header">
-    <h1>⚙️ Settings</h1>
-    <p>Choose your language</p>
+    <h1>⚙️ {{ i18n.settings.title }}</h1>
+    <p>{{ i18n.settings.description }}</p>
 </div>
 
 <div class="card">
     <div class="form-group">
-        <label for="language-select">Interface language</label>
+        <label for="language-select">{{ i18n.settings.form }}</label>
         <select id="language-select" class="form-input">
             <option value="en">English</option>
             <option value="ru">Русский</option>
@@ -18,34 +18,29 @@
         </select>
     </div>
 
-    <button class="btn" onclick="saveLanguage()">Save</button>
+    <button class="btn" onclick="saveLanguage()">{{ i18n.settings.save }}</button>
 </div>
 {% endblock %}
 
 {% block scripts %}
 async function saveLanguage() {
-    const select = document.getElementById('language-select');
-    const lang = select.value;
+    const lang = document.getElementById('language-select').value;
+
     try {
         const params = new URLSearchParams({ language_code: lang });
         const response = await fetch('/api/v1/users/me?' + params.toString(), {
             method: 'PUT',
-            headers: createAuthHeaders()
+<!--            headers: createAuthHeaders()-->
         });
         if (!response.ok) {
             tg.showAlert('Failed to save language');
             return;
         }
-        await loadTranslations(lang);
-        if (typeof updateMenuFromI18n === 'function') {
-            updateMenuFromI18n();
-        }
-        tg.showAlert('Language saved');
+
+        window.location.replace("/settings");
     } catch (e) {
         console.error('Failed to save language', e);
         tg.showAlert('Error saving language');
     }
 }
 {% endblock %}
-
-

@@ -1,42 +1,48 @@
 {% extends "base.html" %}
 
-{% block title %}Lesson Details{% endblock %}
+{% block title %}{{ i18n.lesson_details.title }}{% endblock %}
 
 {% block content %}
 <div class="header">
-    <h1 id="lesson-title">Loading...</h1>
+    <h1 id="lesson-title">{{ i18n.common.loading }}</h1>
     <p id="lesson-description"></p>
 </div>
 
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-number" id="total-words">0</div>
-        <div class="stat-label">Total Words</div>
+        <div class="stat-label">{{ i18n.lesson_details.total_words }}</div>
     </div>
     <div class="stat-card">
         <div class="stat-number" id="learned-count">0</div>
-        <div class="stat-label">Learned</div>
+        <div class="stat-label">{{ i18n.lesson_details.learned }}</div>
     </div>
 </div>
 
 <a href="/study/{{ lesson_id }}" class="btn btn-success">
-    ▶️ Start Learning
+    ▶️ {{ i18n.lesson_details.start_learning }}
 </a>
 
-<h2 style="margin: 24px 0 16px 0;">📝 Words in this Lesson</h2>
+<h2 style="margin: 24px 0 16px 0;">
+    📝 {{ i18n.lesson_details.words_in_lesson }}
+</h2>
 
 <a href="#" id="add-word-btn" class="btn" style="background: #28a745; margin-bottom: 16px;">
-    ➕ Add New Word
+    ➕ {{ i18n.lesson_details.add_word }}
 </a>
 
 <div id="words-list">
     <div style="text-align: center; padding: 40px;">
         <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
-        <p style="margin-top: 16px;">Loading words...</p>
+        <p style="margin-top: 16px;">
+            {{ i18n.lesson_details.loading_words }}
+        </p>
     </div>
 </div>
 
-<a href="#" id="back-to-course" class="btn btn-secondary">← Back to Course</a>
+<a href="#" id="back-to-course" class="btn btn-secondary">
+    ← {{ i18n.lesson_details.back_to_course }}
+</a>
 {% endblock %}
 
 {% block scripts %}
@@ -49,9 +55,7 @@ let courseId = null;
 async function loadLessonData() {
     try {
         // Load lesson info
-        const lessonResponse = await fetch(`/api/v1/lessons/${lessonId}`, {
-            headers: createAuthHeaders()
-        });
+        const lessonResponse = await fetch(`/api/v1/lessons/${lessonId}`);
 
         if (!lessonResponse.ok) {
             throw new Error('Failed to load lesson');
@@ -66,9 +70,7 @@ async function loadLessonData() {
 
         // Load lesson progress
         try {
-            const progressResponse = await fetch(`/api/v1/reviews/progress/lesson/${lessonId}`, {
-                headers: createAuthHeaders()
-            });
+            const progressResponse = await fetch(`/api/v1/reviews/progress/lesson/${lessonId}`);
 
             if (progressResponse.ok) {
                 const progress = await progressResponse.json();
@@ -92,7 +94,7 @@ async function loadLessonData() {
         document.getElementById('total-words').textContent = words.length;
 
         const wordsList = document.getElementById('words-list');
-
+<!--TODO: move this block to content and hide-->
         if (words.length === 0) {
             wordsList.innerHTML = `
                 <div class="empty-state">

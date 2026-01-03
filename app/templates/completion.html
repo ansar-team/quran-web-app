@@ -1,52 +1,82 @@
 {% extends "base.html" %}
 
-{% block title %}{% if not lesson_id %}Practice Complete!{% else %}Lesson Complete!{% endif %}{% endblock %}
+{% block title %}
+{% if not lesson_id %}
+    {{ i18n.completion.practice_title }}
+{% else %}
+    {{ i18n.completion.lesson_title }}
+{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="header">
-    <h1>🎉 {% if not lesson_id %}Practice Complete!{% else %}Lesson Complete!{% endif %}</h1>
-    <p>Great job! You've mastered {% if not lesson_id %}this practice session{% else %}this lesson{% endif %}.</p>
+    <h1>🎉
+        {% if not lesson_id %}
+            {{ i18n.completion.practice_title }}
+        {% else %}
+            {{ i18n.completion.lesson_title }}
+        {% endif %}
+    </h1>
+    <p>
+        {% if not lesson_id %}
+            {{ i18n.completion.practice_description }}
+        {% else %}
+            {{ i18n.completion.lesson_description }}
+        {% endif %}
+    </p>
 </div>
 
 <div class="card" style="background: #d4edda; border: 2px solid #28a745;">
-    <h2 style="color: #155724; margin-bottom: 16px;">Excellent Progress!</h2>
+    <h2 style="color: #155724; margin-bottom: 16px;">
+        {{ i18n.completion.excellent_progress }}
+    </h2>
     <p style="color: #155724;">
-        You've successfully completed <strong id="completed-lesson-title">
-            {% if not lesson_id %}word repetition practice{% else %}this lesson{% endif %}
+        {{ i18n.completion.completed_prefix }}
+        <strong id="completed-lesson-title">
+            {% if not lesson_id %}
+                {{ i18n.completion.practice_name }}
+            {% else %}
+                {{ i18n.completion.lesson_name }}
+            {% endif %}
         </strong>
     </p>
 </div>
 
-<div class="stats-grid">
+<div class="stats-grid" id="stats-grid">
     <div class="stat-card">
         <div class="stat-number" id="words-studied">0</div>
-        <div class="stat-label">Words Studied</div>
+        <div class="stat-label">{{ i18n.completion.words_studied }}</div>
     </div>
     <div class="stat-card">
         <div class="stat-number" id="words-learned">0</div>
-        <div class="stat-label">Words Learned</div>
+        <div class="stat-label">{{ i18n.completion.words_learned }}</div>
     </div>
     <div class="stat-card">
         <div class="stat-number" id="streak-count">1</div>
-        <div class="stat-label">Day Streak</div>
+        <div class="stat-label">{{ i18n.completion.day_streak }}</div>
     </div>
 </div>
 
 <div class="card">
-    <h3 style="margin-bottom: 12px;">🎯 What's Next?</h3>
+    <h3 style="margin-bottom: 12px;">
+        🎯 {{ i18n.completion.whats_next }}
+    </h3>
     <p style="margin-bottom: 16px; color: var(--tg-theme-hint-color, #666);">
-        Words you rated as "Hard" will appear more frequently in review sessions to strengthen your memory.
+        {{ i18n.completion.hard_words_hint }}
     </p>
 </div>
+
 <!--TODO: add functionality to those buttons -->
 <a href="#" id="continue-btn" class="btn">
-    Continue to Next Lesson
+    {{ i18n.completion.continue_next_lesson }}
 </a>
+
 <a href="/lessons/{{ lesson_id }}" class="btn btn-secondary">
-    Review This Lesson Again
+    {{ i18n.completion.review_lesson }}
 </a>
+
 <a href="/courses" class="btn btn-secondary">
-    📚 All Courses
+    📚 {{ i18n.completion.all_courses }}
 </a>
 {% endblock %}
 
@@ -58,9 +88,7 @@ async function loadCompletionData() {
         await updateStreak();
 
         if (lessonId) {
-            const lessonResponse = await fetch(`/api/v1/lessons/${lessonId}`, {
-                headers: createAuthHeaders()
-            });
+            const lessonResponse = await fetch(`/api/v1/lessons/${lessonId}`);
 
             if (!lessonResponse.ok) {
                 throw new Error('Failed to load lesson');
@@ -71,9 +99,7 @@ async function loadCompletionData() {
             document.getElementById('continue-btn').href = `/courses/${lesson.course_id}`;
 
             // Load lesson progress to get accurate stats
-            const progressResponse = await fetch(`/api/v1/reviews/progress/lesson/${lessonId}`, {
-                headers: createAuthHeaders()
-            });
+            const progressResponse = await fetch(`/api/v1/reviews/progress/lesson/${lessonId}`});
 
             if (progressResponse.ok) {
                 const progress = await progressResponse.json();
@@ -94,7 +120,6 @@ async function updateStreak() {
     try {
         const response = await fetch('/api/v1/reviews/streak', {
             method: 'POST',
-            headers: createAuthHeaders()
         });
 
         if (!response.ok) {

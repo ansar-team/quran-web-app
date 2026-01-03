@@ -1,64 +1,91 @@
 {% extends "base.html" %}
 
-{% block title %}Add Word{% endblock %}
+{% block title %}{{ i18n.add_word.title }}{% endblock %}
 
 {% block content %}
 <div class="header">
-    <h1>📝 Add New Word</h1>
-    <p id="lesson-name">Loading...</p>
+    <h1>📝 {{ i18n.add_word.header }}</h1>
+    <p id="lesson-name">{{ i18n.common.loading }}</p>
 </div>
 
 <form id="word-form" class="card">
     <div class="form-group">
-        <label for="text">Word/Phrase *</label>
-        <input type="text" id="text" name="text" class="form-input" required
-               placeholder="e.g., Hello">
+        <label for="text">{{ i18n.add_word.word }} *</label>
+        <input type="text"
+               id="text"
+               name="text"
+               class="form-input"
+               required
+               placeholder="{{ i18n.add_word.ph_word }}">
     </div>
 
     <div class="form-group">
-        <label for="translation">Translation *</label>
-        <input type="text" id="translation" name="translation" class="form-input" required
-               placeholder="e.g., Hola">
+        <label for="translation">{{ i18n.add_word.translation }} *</label>
+        <input type="text"
+               id="translation"
+               name="translation"
+               class="form-input"
+               required
+               placeholder="{{ i18n.add_word.ph_translation }}">
     </div>
 
     <div class="form-group">
-        <label for="pronunciation">Pronunciation</label>
-        <input type="text" id="pronunciation" name="pronunciation" class="form-input"
-               placeholder="e.g., oh-lah or /oʊˈlɑː/">
+        <label for="pronunciation">{{ i18n.add_word.pronunciation }}</label>
+        <input type="text"
+               id="pronunciation"
+               name="pronunciation"
+               class="form-input"
+               placeholder="{{ i18n.add_word.ph_pronunciation }}">
     </div>
 
     <div class="form-group">
-        <label for="example_sentence">Example Sentence</label>
-        <textarea id="example_sentence" name="example_sentence" class="form-input" rows="2"
-                  placeholder="e.g., Hola, ¿cómo estás?"></textarea>
+        <label for="example_sentence">{{ i18n.add_word.example_sentence }}</label>
+        <textarea id="example_sentence"
+                  name="example_sentence"
+                  class="form-input"
+                  rows="2"
+                  placeholder="{{ i18n.add_word.ph_example }}"></textarea>
     </div>
 
     <div class="form-group">
-        <label for="difficulty_level">Difficulty Level</label>
+        <label for="difficulty_level">{{ i18n.add_word.difficulty }}</label>
         <select id="difficulty_level" name="difficulty_level" class="form-input">
-            <option value="1">1 - Very Easy</option>
-            <option value="2" selected>2 - Easy</option>
-            <option value="3">3 - Medium</option>
-            <option value="4">4 - Hard</option>
-            <option value="5">5 - Very Hard</option>
+            <option value="1">{{ i18n.add_word.diff_1 }}</option>
+            <option value="2" selected>{{ i18n.add_word.diff_2 }}</option>
+            <option value="3">{{ i18n.add_word.diff_3 }}</option>
+            <option value="4">{{ i18n.add_word.diff_4 }}</option>
+            <option value="5">{{ i18n.add_word.diff_5 }}</option>
         </select>
     </div>
 
     <div class="form-group">
-        <label for="order_index">Word Order</label>
-        <input type="number" id="order_index" name="order_index" class="form-input"
-               value="1" min="1" required>
+        <label for="order_index">{{ i18n.add_word.word_order }}</label>
+        <input type="number"
+               id="order_index"
+               name="order_index"
+               class="form-input"
+               value="1"
+               min="1"
+               required>
         <small style="color: var(--tg-theme-hint-color, #666); font-size: 12px;">
-            Order in which this word appears in the lesson
+            {{ i18n.add_word.order_hint }}
         </small>
     </div>
 
-    <button type="submit" class="btn">✓ Add Word</button>
-    <button type="button" class="btn" onclick="saveAndAddAnother()"
-            style="background: var(--tg-theme-secondary-bg-color, #6c757d);">
-        ✓ Save & Add Another
+    <button type="submit" class="btn">
+        ✓ {{ i18n.add_word.add_button }}
     </button>
-    <a href="#" id="cancel-btn" class="btn btn-secondary">Cancel</a>
+
+    <button type="button"
+            class="btn"
+            onclick="saveAndAddAnother()"
+            style="background: var(--tg-theme-secondary-bg-color, #6c757d);">
+        ✓ {{ i18n.add_word.save_add_another }}
+    </button>
+
+    <a href="#" id="cancel-btn" class="btn btn-secondary">
+        {{ i18n.common.cancel }}
+    </a>
 </form>
 {% endblock %}
 
@@ -69,9 +96,7 @@ let saveAndContinue = false;
 // Load lesson info
 async function loadLessonInfo() {
     try {
-        const response = await fetch(`/api/v1/lessons/${lessonId}`, {
-            headers: createAuthHeaders()
-        });
+        const response = await fetch(`/api/v1/lessons/${lessonId}`);
 
         if (!response.ok) {
             throw new Error('Failed to load lesson info');
@@ -81,9 +106,7 @@ async function loadLessonInfo() {
         document.getElementById('lesson-name').textContent = `For lesson: ${lesson.title}`;
 
         // Load existing words to set next order
-        const wordsResponse = await fetch(`/api/v1/words/lesson/${lessonId}`, {
-            headers: createAuthHeaders()
-        });
+        const wordsResponse = await fetch(`/api/v1/words/lesson/${lessonId}`);
 
         if (wordsResponse.ok) {
             const words = await wordsResponse.json();
@@ -121,7 +144,6 @@ document.getElementById('word-form').addEventListener('submit', async (e) => {
 
         const response = await fetch(`/api/v1/words/lesson/${lessonId}`, {
             method: 'POST',
-            headers: createAuthHeaders(),
             body: JSON.stringify(formData)
         });
 

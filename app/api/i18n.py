@@ -34,3 +34,20 @@ async def get_translations(lang: str):
     return load_locale(lang)
 
 
+I18N_CACHE: dict[str, dict] = {}
+BASE_DIR = Path(__file__).resolve().parent.parent
+I18N_PATH = BASE_DIR / "locales"
+
+def load_i18n(lang: str) -> dict:
+    if lang in I18N_CACHE:
+        return I18N_CACHE[lang]
+
+    file_path = I18N_PATH / f"{lang}.json"
+    if not file_path.exists():
+        file_path = I18N_PATH / "en.json"
+
+    with open(file_path, encoding="utf-8") as f:
+        data = json.load(f)
+
+    I18N_CACHE[lang] = data
+    return data
