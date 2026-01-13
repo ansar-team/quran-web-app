@@ -7,6 +7,10 @@ terraform {
       source  = "yandex-cloud/yandex"
       version = ">= 0.13"
     }
+    cloudinit = {
+      source  = "hashicorp/cloudinit"
+      version = ">= 2.3.0"
+    }
   }
 }
 
@@ -162,6 +166,22 @@ resource "yandex_mdb_postgresql_database" "app_database" {
 #   wait_validation = true
 # }
 
+data "cloudinit_config" "vm_init" {
+  gzip          = false
+  base64_encode = false
+
+  part {
+    filename     = "cloud-config.yaml"
+    content_type = "text/cloud-config"
+
+    content = templatefile("${path.module}/cloud-config.yaml", {
+        docker_image       = "cr.yandex/${var.registry_id}/telegram-app:latest"
+        database_url       = "postgresql://${var.db_username}:${var.db_password}@${yandex_mdb_postgresql_cluster.app_db.host[0].fqdn}:6432/telegram_app"
+        telegram_bot_token = var.telegram_bot_token
+    })
+  }
+}
+
 # --------------------
 # Instance Group (autoscaled)
 # --------------------
@@ -172,6 +192,7 @@ resource "yandex_compute_instance_group" "app_group" {
 
   instance_template {
     platform_id = "standard-v3"
+    service_account_id = var.service_account_id
 
     resources {
       cores  = 2
@@ -201,34 +222,15 @@ resource "yandex_compute_instance_group" "app_group" {
     # For Windows users
     metadata = {
       ssh-keys  = "amir:${file("C:/Users/amira/.ssh/id_ed25519.pub")}"
-      # user-data = templatefile("${path.module}/cloud-config.yaml", {
-      # user-data = templatefile("C:/Users/amira/PycharmProjects/quran-web-app/infrastructure/cloud-config.yaml", {
-      #   docker_image       = "cr.yandex/${var.registry_id}/telegram-app:latest"
-      #   database_url       = "postgresql://${var.db_username}:${var.db_password}@${yandex_mdb_postgresql_cluster.app_db.host[0].fqdn}:5432/telegram_app"
-      #   telegram_bot_token = var.telegram_bot_token
-      # })
-        user-data = <<-EOF
-          #cloud-config
-          write_files:
-              path: /etc/telegram.env
-              permissions: '0600'
-              content: |
-                DATABASE_URL=postgresql://${var.db_username}:${var.db_password}@${yandex_mdb_postgresql_cluster.app_db.host[0].fqdn}:5432/telegram_app
-                TELEGRAM_BOT_TOKEN=${var.telegram_bot_token}
-          runcmd:
-          - docker pull cr.yandex/${var.registry_id}/telegram-app:latest
-          - docker run -d \
-            --restart=always \
-            --name fastapi-app \
-            --env-file /etc/telegram.env \
-            -p 8000:8000 \
-            cr.yandex/${var.registry_id}/telegram-app:latest
-        EOF
-      # user-data = file("${path.module}/cloud-config.yaml")
-      # user-data = templatefile("C:/Users/amira/PycharmProjects/quran-web-app/infrastructure/cloud-config.yaml")
+      user-data = data.cloudinit_config.vm_init.rendered
       # enable-oslogin = "true"
       # enable-yandex-cloud-monitoring = "true"
       # enable-yandex-cloud-logging = "true"
+    }
+
+    metadata_options {
+      gce_http_endpoint    = 0
+      gce_http_token       = 0
     }
   }
 
