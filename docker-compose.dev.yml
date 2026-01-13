@@ -16,7 +16,7 @@ services:
     build: .
     environment:
       - DATABASE_URL=postgresql://username:password@db:5432/spaced_repetition_db
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-changeme}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
     ports:
       - "8000:8000"
     depends_on:
@@ -27,5 +27,3 @@ services:
 
 volumes:
   pg_data:
-
-

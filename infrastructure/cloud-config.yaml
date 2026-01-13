@@ -1,0 +1,28 @@
+#cloud-config
+package_update: true
+
+packages:
+  - docker.io
+  - jq
+
+write_files:
+  - path: /etc/telegram.env
+    permissions: '0644'
+    owner: root:root
+    content: |
+      DATABASE_URL=${database_url}
+      TELEGRAM_BOT_TOKEN=${telegram_bot_token}
+
+runcmd:
+  - systemctl enable docker
+  - systemctl start docker
+  - docker-credential-ycr configure-docker
+  - docker pull ${docker_image}
+  - docker run -d \
+      --restart=always \
+      --name fastapi-app \
+      --env-file /etc/telegram.env \
+      -p 80:8000 \
+      ${docker_image}
+
+final_message: "Docker FastAPI app started successfully."
