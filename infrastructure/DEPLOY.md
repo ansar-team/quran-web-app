@@ -1,5 +1,8 @@
 # Infrastructure deployment
 
+To ease and boost infrastructure deployment we prepared terraform files, in future we may enhance this guide with
+ansible and k8s.
+
 To automatically set up the infrastructure you should prepare an environment for that. This guide is
 structured for Yandex Cloud, therefore we use their [guide](https://yandex.cloud/ru/docs/tutorials/infrastructure-management/terraform-quickstart).
 It covers base things like creating a cloud account, setting payment account, downloading terraform, setting environment
@@ -105,10 +108,10 @@ Output for last command:
 +---------------------------------------------+----------------+----------------------+
 |                   ROLE ID                   |  SUBJECT TYPE  |      SUBJECT ID      |
 +---------------------------------------------+----------------+----------------------+
-| alb.editor                                  | serviceAccount | ajeiui3ihmv6qd6pvncv |
-| container-registry.images.puller            | serviceAccount | ajeiui3ihmv6qd6pvncv |
-| certificate-manager.editor                  | serviceAccount | ajeiui3ihmv6qd6pvncv |
-| certificate-manager.certificates.downloader | serviceAccount | ajeiui3ihmv6qd6pvncv |
+| alb.editor                                  | serviceAccount | aje................. |
+| container-registry.images.puller            | serviceAccount | aje................. |
+| certificate-manager.editor                  | serviceAccount | aje................. |
+| certificate-manager.certificates.downloader | serviceAccount | aje................. |
 +---------------------------------------------+----------------+----------------------+
 ```
 ```
@@ -164,7 +167,7 @@ In `variables.tf` you have the following variables:
 
 To set them up follow the following:
 ```bash
-# Get cloud ID
+# Get <yandex_cloud_id>
 yc resource-manager cloud list
 
 # See table of service accounts, check their IDs
@@ -190,18 +193,40 @@ service_account_id = <service_account_id>
 ```
 For variables for `db_username` and `db_password` you choose yourself. `telegram_bot_token` you get only via 
 [BotFather](https://t.me/BotFather) (you can check in the internet how to do it). 
-
+---
 - certificate_domains
+- existing_cert_id
+
+For those two you have buy a domain (or have it). Once you owe one (e.g. example.com) you can set certificate_domains:
+```
+certificate_domains = ["example.com"]
+```
+
+To manage domain certificates use cloud dns services. Check below 
+[how to manage your domain in yandex dns](https://yandex.cloud/ru/docs/storage/operations/hosting/own-domain#third-party-dns-server_1)
+
+Once you attached domain with cloud dns, proceed with creating the 
+[certificate](https://yandex.cloud/ru/docs/certificate-manager/operations/managed/cert-create)
+
+After certificate received "Valid" status, copy the  `existing_cert_id` and assign it in `terraform.tfvars`
+
+---
 - registry_id
+- image_id
+
+Infrastructure deploy require docker container. Current setup uses yandex container registry (in the future, you can 
+switch to public - dockerhub), therefore the registry should contain an image. Once image is pushed to registry, you can
+assign `registry_id` and `image_id` respectively.
+
+To push image to registry, you first should have a registry. Create registry either by cli or yandex control panel.
+After build an image using docker, once it is build, push it to registry. In the future, consider automate image building
+via GitHub actions.
+
+---
+- ssh
+- Linux vs. Windows
 
 
-```
-# Generate SSH key pair
-ssh-keygen -t rsa -b 4096 -C "your-email@example.com" -f ~/.ssh/id_rsa_terraform
-
-# Copy public key to use in terraform.tfvars
-cat ~/.ssh/id_rsa_terraform.pub
-```
 
 ### 5. Apply Terraform 
 
@@ -217,13 +242,10 @@ terraform init
 ```
 3. Plan the deployment:
 ```bash
-terraform plan -var="db_password=your-secure-password" -out=plan.out
+terraform plan
 ```
 4. Apply the configuration:
 ```bash
-terraform apply plan.out
-
-# Or apply directly:
 terraform apply
 ```
 
