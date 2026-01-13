@@ -109,8 +109,6 @@ class WordBaseSchema(BaseModel):
     translation: str = Field(..., min_length=1, max_length=500)
     pronunciation: Optional[str] = None
     example_sentence: Optional[str] = None
-    difficulty_level: int = Field(1, ge=1, le=5)
-    order_index: int = Field(..., ge=1)
 
 
 class WordCreateSchema(WordBaseSchema):
@@ -122,7 +120,6 @@ class WordUpdateSchema(BaseModel):
     translation: Optional[str] = Field(None, min_length=1, max_length=500)
     pronunciation: Optional[str] = None
     example_sentence: Optional[str] = None
-    difficulty_level: Optional[int] = Field(None, ge=1, le=5)
 
 
 class WordSchema(WordBaseSchema):
@@ -133,6 +130,13 @@ class WordSchema(WordBaseSchema):
 
     class Config:
         from_attributes = True
+
+
+class WordRatingSchema(BaseModel):
+    """Schema for rating a word"""
+    word_id: int
+    rating: int  # 1=Easy, 2=Medium, 3=Hard, 4=Again
+    lesson_id: Optional[int] = None
 
 
 class UserWordBaseSchema(BaseModel):
@@ -151,9 +155,6 @@ class UserWordUpdateSchema(BaseModel):
 class UserWordSchema(UserWordBaseSchema):
     id: int
     user_id: int
-    total_reviews: int
-    correct_reviews: int
-    last_reviewed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -205,15 +206,11 @@ class LessonProgressUpdateSchema(BaseModel):
     is_completed: Optional[bool] = None
 
 
-class LessonProgressSchema(LessonProgressBaseSchema):
-    id: int
-    user_id: int
-    is_started: bool
-    is_completed: bool
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    created_at: datetime
-    updated_at: Optional[datetime] = None
+class LessonProgressSchema(BaseModel):
+    is_completed: bool = None
+    total_words: int
+    words_learned: int
+    progress_percentage: int = None
 
     class Config:
         from_attributes = True
@@ -242,10 +239,8 @@ class WordWithProgressSchema(WordSchema):
 class ReviewSessionSchema(BaseModel):
     """Represents a review session with words to review"""
     lesson_id: int
-    words_to_review: List[WordWithProgressSchema]
-    new_words: List[WordWithProgressSchema]
+    words: List[WordWithProgressSchema]
     total_words: int
-    session_type: str  # "new_lesson", "review_old", "mixed"
 
 
 class ReviewResultSchema(BaseModel):
