@@ -76,27 +76,26 @@ document.getElementById('course-form').addEventListener('submit', async (e) => {
     };
 
     try {
-        tg.HapticFeedback.impactOccurred('medium');
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
 
         const response = await fetch('/api/v1/courses/', {
             method: 'POST',
             body: JSON.stringify(formData)
         });
 
-        // TODO: remove haptic feedback
         if (response.ok) {
             const course = await response.json();
-            tg.HapticFeedback.notificationOccurred('success');
-            tg.showAlert('Course created successfully!', () => {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+            window.Telegram.WebApp.showAlert('Course created successfully!', () => {
                 location.href = `/courses/${course.id}`;
             });
         } else {
             const error = await response.json();
-            tg.showAlert(`Error: ${error.detail || 'Failed to create course'}`);
+            window.Telegram.WebApp.showAlert(`Error: ${error.detail || 'Failed to create course'}`);
         }
     } catch (error) {
         console.error('Error creating course:', error);
-        tg.showAlert('Failed to create course. Please try again.');
+        window.Telegram.WebApp.showAlert('Failed to create course. Please try again.');
     }
 });
 {% endblock %}

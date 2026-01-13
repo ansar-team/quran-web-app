@@ -105,6 +105,9 @@ async function loadCompletionData() {
                 const progress = await progressResponse.json();
                 document.getElementById('words-studied').textContent = progress.total_words;
                 document.getElementById('words-learned').textContent = progress.words_learned;
+            } else {
+                // TODO: show box with message - failed to load data
+                document.getElementById('stats-grid').style.display = 'none';
             }
         } else {
             // For repetition, you might want to load different stats
@@ -136,7 +139,7 @@ async function updateStreak() {
 }
 
 // Celebrate!
-tg.HapticFeedback.notificationOccurred('success');
+window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
 
 // Load data
 loadCompletionData();

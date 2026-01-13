@@ -47,31 +47,6 @@
                   placeholder="{{ i18n.add_word.ph_example }}"></textarea>
     </div>
 
-    <div class="form-group">
-        <label for="difficulty_level">{{ i18n.add_word.difficulty }}</label>
-        <select id="difficulty_level" name="difficulty_level" class="form-input">
-            <option value="1">{{ i18n.add_word.diff_1 }}</option>
-            <option value="2" selected>{{ i18n.add_word.diff_2 }}</option>
-            <option value="3">{{ i18n.add_word.diff_3 }}</option>
-            <option value="4">{{ i18n.add_word.diff_4 }}</option>
-            <option value="5">{{ i18n.add_word.diff_5 }}</option>
-        </select>
-    </div>
-
-    <div class="form-group">
-        <label for="order_index">{{ i18n.add_word.word_order }}</label>
-        <input type="number"
-               id="order_index"
-               name="order_index"
-               class="form-input"
-               value="1"
-               min="1"
-               required>
-        <small style="color: var(--tg-theme-hint-color, #666); font-size: 12px;">
-            {{ i18n.add_word.order_hint }}
-        </small>
-    </div>
-
     <button type="submit" class="btn">
         ✓ {{ i18n.add_word.add_button }}
     </button>
@@ -104,17 +79,6 @@ async function loadLessonInfo() {
 
         const lesson = await response.json();
         document.getElementById('lesson-name').textContent = `For lesson: ${lesson.title}`;
-
-        // Load existing words to set next order
-        const wordsResponse = await fetch(`/api/v1/words/lesson/${lessonId}`);
-
-        if (wordsResponse.ok) {
-            const words = await wordsResponse.json();
-            if (words.length > 0) {
-                const maxOrder = Math.max(...words.map(w => w.order_index || 0));
-                document.getElementById('order_index').value = maxOrder + 1;
-            }
-        }
     } catch (error) {
         console.error('Error loading lesson:', error);
     }
@@ -134,57 +98,38 @@ document.getElementById('word-form').addEventListener('submit', async (e) => {
         text: document.getElementById('text').value,
         translation: document.getElementById('translation').value,
         pronunciation: document.getElementById('pronunciation').value || null,
-        example_sentence: document.getElementById('example_sentence').value || null,
-        difficulty_level: parseInt(document.getElementById('difficulty_level').value),
-        order_index: parseInt(document.getElementById('order_index').value)
+        example_sentence: document.getElementById('example_sentence').value || null
     };
 
     try {
-        tg.HapticFeedback.impactOccurred('medium');
-
         const response = await fetch(`/api/v1/words/lesson/${lessonId}`, {
             method: 'POST',
             body: JSON.stringify(formData)
         });
 
-        // TODO: remove haptic feedback
         if (response.ok) {
             const word = await response.json();
-            tg.HapticFeedback.notificationOccurred('success');
 
             if (saveAndContinue) {
-                // Reset form and increment order
                 document.getElementById('text').value = '';
                 document.getElementById('translation').value = '';
                 document.getElementById('pronunciation').value = '';
                 document.getElementById('example_sentence').value = '';
-                document.getElementById('difficulty_level').value = '2';
-                document.getElementById('order_index').value = parseInt(document.getElementById('order_index').value) + 1;
 
-                // Focus on first field
                 document.getElementById('text').focus();
-
-                tg.showPopup({
-                    title: 'Success',
-                    message: 'Word added! Add another one.',
-                    buttons: [{type: 'ok'}]
-                });
 
                 saveAndContinue = false;
             } else {
-                // TODO: remove haptic feedback
-                tg.showAlert('Word added successfully!', () => {
-                    location.href = `/lessons/${lessonId}`;
-                });
+                window.location.href = `/lessons/${lessonId}`;
             }
         } else {
             const error = await response.json();
-            tg.showAlert(`Error: ${error.detail || 'Failed to add word'}`);
+            window.Telegram.WebApp.showAlert(`Error: ${error.detail || 'Failed to add word'}`);
             saveAndContinue = false;
         }
     } catch (error) {
         console.error('Error adding word:', error);
-        tg.showAlert('Failed to add word. Please try again.');
+        window.Telegram.WebApp.showAlert('Failed to add word. Please try again.');
         saveAndContinue = false;
     }
 });

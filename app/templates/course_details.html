@@ -115,7 +115,6 @@ async function loadCourseData() {
                 </a>
             `).join('');
 
-            // Load progress for each lesson asynchronously
             lessons.forEach(async lesson => {
                 try {
                     const progressResponse = await fetch(`/api/v1/reviews/progress/lesson/${lesson.id}`);
@@ -133,7 +132,7 @@ async function loadCourseData() {
                     }
 
                     document.getElementById(`progress-text-${lesson.id}`)
-                        .textContent = `${p.words_learned || 0}/${p.total_words || 0} 🤓`;
+                        .textContent = `${progress.words_learned || 0}/${progress.total_words || 0} 🤓`;
 
 
                     if (progressPercentage > 0) {
@@ -153,13 +152,13 @@ async function loadCourseData() {
             // Add haptic feedback
             document.querySelectorAll('.lesson-item').forEach(item => {
                 item.addEventListener('click', () => {
-                    tg.HapticFeedback.impactOccurred('light');
+                    window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
                 });
             });
         }
     } catch (error) {
         console.error('Error loading course data:', error);
-        tg.showAlert('Failed to load course.');
+        window.Telegram.WebApp.showAlert('Failed to load course.');
     }
 }
 

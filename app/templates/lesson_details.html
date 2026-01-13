@@ -118,7 +118,7 @@ async function loadLessonData() {
                         </div>
                     ` : ''}
                     ${word.example_sentence ? `
-                        <div style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 14px; font-style: italic;">
+                        <div style="color: #3a3a3a; margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 14px; font-style: italic;">
                             ${word.example_sentence}
                         </div>
                     ` : ''}
@@ -127,15 +127,13 @@ async function loadLessonData() {
         }
     } catch (error) {
         console.error('Error loading lesson data:', error);
-        tg.showAlert('Failed to load lesson data. Please try again.');
+        window.Telegram.WebApp.showAlert('Failed to load lesson data. Please try again.');
     }
 }
 
-// Add haptic feedback for start button
 document.querySelector('.btn-success')?.addEventListener('click', (e) => {
-    tg.HapticFeedback.impactOccurred('medium');
+    window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
 });
 
-// Load data on page load
 loadLessonData();
 {% endblock %}

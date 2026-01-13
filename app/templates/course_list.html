@@ -61,10 +61,9 @@ async function loadCourses() {
                 </div>
             `).join('');
 
-            // Add click feedback
             document.querySelectorAll('.card').forEach(card => {
                 card.addEventListener('click', () => {
-                    tg.HapticFeedback.impactOccurred('light');
+                    window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
                 });
             });
         }
