@@ -95,7 +95,10 @@
 </div>
 
 <div style="text-align: center; margin: 16px 0; font-size: 14px; color: var(--tg-theme-hint-color, #666);">
-    Word <span id="current-word-num">1</span> of <span id="total-words">{{ words|length }}</span>
+    {{ i18n.study.word }}
+    <span id="current-word-num">1</span>
+    {{ i18n.study.of }}
+    <span id="total-words">{{ words|length }}</span>
 </div>
 
 <div class="word-study-card">
@@ -106,34 +109,48 @@
         <div class="translation-display" id="word-translation"></div>
         <div class="example-display" id="word-example"></div>
 
-        <p style="margin: 24px 0 12px 0; font-weight: 600;">How well did you remember?</p>
+        <p style="margin: 24px 0 12px 0; font-weight: 600">
+            {{ i18n.study.how_well }}
+        </p>
+
         <div class="rating-buttons">
             <button class="rating-btn rating-easy" onclick="rateWord(4)">
-                😄 Easy
+                😄 {{ i18n.study.easy }}
             </button>
             <button class="rating-btn rating-good" onclick="rateWord(3)">
-                🙂 Good
+                🙂 {{ i18n.study.good }}
             </button>
             <button class="rating-btn rating-hard" onclick="rateWord(2)">
-                😐 Hard
+                😐 {{ i18n.study.hard }}
             </button>
             <button class="rating-btn rating-again" onclick="rateWord(1)">
-                😕 Again
+                😕 {{ i18n.study.again }}
             </button>
         </div>
-        <p style="margin-top: 16px; font-size: 13px; color: var(--tg-theme-hint-color, #666);">
-            <strong>Hard</strong> words will appear more frequently for practice
+
+        <p style="margin-top: 16px; font-size: 13px; color: #3a3a3a;">
+            <strong>{{ i18n.study.hard }}</strong>
+            {{ i18n.study.hard_hint }}
         </p>
     </div>
 
     <div id="show-answer-btn">
-        <button class="btn" onclick="showAnswer()">Show Answer</button>
-        <button class="btn btn-secondary btn-sm" onclick="skipWord()">Skip</button>
+        <button class="btn" onclick="showAnswer()">
+            {{ i18n.study.show_answer }}
+        </button>
+        <!-- TODO: do we need skip? -->
+        <button class="btn btn-secondary btn-sm" onclick="skipWord()">
+            {{ i18n.study.skip }}
+        </button>
     </div>
 </div>
 
-<button class="btn btn-secondary" onclick="confirmExit()">Exit Study</button>
+<button class="btn btn-secondary" onclick="confirmExit()">
+    {{ i18n.study.exit }}
+</button>
+<a href="/courses" class="btn btn-secondary" style="margin-bottom: 58px">← {{ i18n.study.exit }}</a>
 {% endblock %}
+
 
 {% block scripts %}
 const lessonId = {{ lesson_id if lesson_id else 'null' }};
@@ -145,13 +162,9 @@ async function loadStudyData() {
     try {
         let response;
         if (isDueReview) {
-            response = await fetch('/api/v1/reviews/due', {
-                headers: createAuthHeaders()
-            });
+            response = await fetch('/api/v1/reviews/due');
         } else {
-            response = await fetch(`/api/v1/reviews/session/lesson/${lessonId}`, {
-                headers: createAuthHeaders()
-            });
+            response = await fetch(`/api/v1/reviews/session/lesson/${lessonId}`);
         }
 
         if (!response.ok) {
@@ -159,16 +172,11 @@ async function loadStudyData() {
         }
 
         const session = await response.json();
-
-        if (isDueReview) {
-            words = session.words || [];
-        } else {
-            words = [...session.words_to_review, ...session.new_words];
-        }
+        words = session.words || [];
 
         if (words.length === 0) {
             const message = isDueReview ? 'No words due for review right now!' : 'No words to study in this lesson';
-            tg.showAlert(message);
+            window.Telegram.WebApp.showAlert(message);
             history.back();
             return;
         }
@@ -177,7 +185,7 @@ async function loadStudyData() {
         displayWord();
     } catch (error) {
         console.error('Error loading study data:', error);
-        tg.showAlert('Failed to load study session');
+        window.Telegram.WebApp.showAlert('Failed to load study session');
         history.back();
     }
 }
@@ -205,26 +213,24 @@ function displayWord() {
 }
 
 function showAnswer() {
-    tg.HapticFeedback.impactOccurred('light');
     document.getElementById('answer-section').style.display = 'block';
     document.getElementById('show-answer-btn').style.display = 'none';
 }
 
 function skipWord() {
-    tg.HapticFeedback.selectionChanged();
     currentWordIndex++;
     displayWord();
 }
 
 async function rateWord(rating) {
-    tg.HapticFeedback.impactOccurred('medium');
-
     const word = words[currentWordIndex];
 
     try {
         const response = await fetch('/api/v1/reviews/rate', {
             method: 'POST',
-            headers: createAuthHeaders(),
+            headers: {
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify({
                 word_id: word.id,
                 rating: rating,
@@ -236,33 +242,22 @@ async function rateWord(rating) {
             currentWordIndex++;
             displayWord();
         } else {
-            tg.showAlert('Failed to save rating. Please try again.');
+            const errorData = await response.json();
+            console.error('Rate error:', errorData);
+            window.Telegram.WebApp.showAlert(`HTTP ${response.status}: ${JSON.stringify(errorData)}`);
         }
     } catch (error) {
         console.error('Error rating word:', error);
-        tg.showAlert('Error saving rating');
     }
 }
 
 function completeLesson() {
-    tg.HapticFeedback.notificationOccurred('success');
+    window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
     if (isDueReview) {
         location.href = '/lessons/0/complete';
     } else {
         location.href = `/lessons/${lessonId}/complete`;
     }
-}
-
-function confirmExit() {
-    tg.showConfirm('Exit study session? Your progress will be saved.', (confirmed) => {
-        if (confirmed) {
-            if (isDueReview) {
-                location.href = '/courses';
-            } else {
-                location.href = `/lessons/${lessonId}`;
-            }
-        }
-    });
 }
 
 // Mark lesson as started when study begins
@@ -275,14 +270,12 @@ async function markLessonStarted() {
     try {
         await fetch(`/api/v1/reviews/lesson/${lessonId}/start`, {
             method: 'POST',
-            headers: createAuthHeaders()
         });
     } catch (error) {
         console.error('Error marking lesson as started:', error);
     }
 }
 
-// Initialize
 markLessonStarted();
 loadStudyData();
 {% endblock %}

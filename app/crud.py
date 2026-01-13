@@ -88,7 +88,7 @@ class LessonCRUD:
     def get_course_lessons(db: Session, course_id: int, user_id: int) -> List[LessonSchema]:
         return db.query(Lesson).join(Course).filter(
             and_(Lesson.course_id == course_id, Course.user_id == user_id)
-        ).order_by(asc(Lesson.order_index)).all()
+        ).all()
 
     @staticmethod
     def get_lesson(db: Session, lesson_id: int, user_id: int) -> Optional[LessonSchema]:
@@ -134,7 +134,7 @@ class WordCRUD:
     def get_lesson_words(db: Session, lesson_id: int, user_id: int) -> List[WordSchema]:
         return db.query(Word).join(Lesson).join(Course).filter(
             and_(Word.lesson_id == lesson_id, Course.user_id == user_id)
-        ).order_by(asc(Word.order_index)).all()
+        ).all()
 
     @staticmethod
     def get_word(db: Session, word_id: int, user_id: int) -> Optional[WordSchema]:

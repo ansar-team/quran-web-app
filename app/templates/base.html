@@ -171,6 +171,35 @@
             margin-bottom: 16px;
         }
 
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--tg-theme-secondary-bg-color, #f8f9fa);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid rgba(0,0,0,0.06);
+            z-index: 100;
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: var(--tg-theme-text-color, #000000);
+            font-size: 12px;
+        }
+
+        .bottom-nav-item span:first-child {
+            font-size: 18px;
+            margin-bottom: 2px;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -220,18 +249,22 @@
         {% block content %}{% endblock %}
     </div>
 
+    <nav class="bottom-nav">
+        <a href="/courses" class="bottom-nav-item">
+            <span>📚</span>
+            <span id="nav-courses-label">{{ i18n.menu.courses }}</span>
+        </a>
+        <a href="/stats" class="bottom-nav-item">
+            <span>📊</span>
+            <span id="nav-stats-label">{{ i18n.menu.stats }}</span>
+        </a>
+        <a href="/settings" class="bottom-nav-item">
+            <span>⚙️</span>
+            <span id="nav-settings-label">{{ i18n.menu.settings }}</span>
+        </a>
+    </nav>
+
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-
-        function createAuthHeaders() {
-            return {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${tg.initData}`
-            };
-        }
-
         {% block scripts %}{% endblock %}
     </script>
 </body>

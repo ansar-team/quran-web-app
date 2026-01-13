@@ -1,11 +1,13 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends, Cookie, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+
+from app.api.i18n import load_i18n
 from app.database import engine
 from app.models import Base
-from app.api import courses, lessons, words, users, reviews, telegram_auth
-
+from app.api import courses, lessons, words, users, reviews, telegram_auth, i18n
+from app.utils.session_store import get_current_user
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -36,123 +38,120 @@ app.include_router(words.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(reviews.router, prefix="/api/v1")
 app.include_router(telegram_auth.router, prefix="/api/v1")
+app.include_router(i18n.router, prefix="/api/v1")
+
+
+async def template_context(
+        request: Request,
+        user=Depends(get_current_user)
+):
+    lang = user.language_code or "en"
+    i18n = load_i18n(lang)
+
+    return {
+        "request": request,
+        "user": user,
+        "lang": lang,
+        "i18n": i18n,
+    }
+
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
-    """Root endpoint - Welcome page"""
-    return templates.TemplateResponse("index.html", {"request": request})
-
-
-@app.get("/courses", response_class=HTMLResponse)
-async def courses_page(request: Request):
-    """Courses list page - authentication happens via JavaScript"""
-    return templates.TemplateResponse("courses.html", {
-        "request": request,
-        "courses": []
-    })
-
-
-@app.get("/courses/create", response_class=HTMLResponse)
-async def create_course_page(
-    request: Request
-):
-    """Create course page"""
-    return templates.TemplateResponse("create_course.html", {
+    return templates.TemplateResponse("start.html", {
         "request": request
     })
 
+@app.get("/home", response_class=HTMLResponse)
+async def home(context=Depends(template_context)):
+    return templates.TemplateResponse("index.html", context)
+
+
+@app.get("/courses", response_class=HTMLResponse)
+async def courses(context=Depends(template_context)):
+    return templates.TemplateResponse("course_list.html", context)
+
+
+@app.get("/courses/create", response_class=HTMLResponse)
+async def create_course_page(context=Depends(template_context)):
+    return templates.TemplateResponse("course_create.html", context)
+
 
 @app.get("/courses/{course_id}", response_class=HTMLResponse)
-async def course_detail_page(course_id: int, request: Request):
-    """Course detail page with lessons - data loaded via JavaScript"""
-    return templates.TemplateResponse("course_details.html", {
-        "request": request,
-        "course_id": course_id
-    })
+async def course_detail_page(
+        course_id: int,
+        context=Depends(template_context)
+):
+    context["course_id"] = course_id
+    return templates.TemplateResponse("course_details.html", context)
 
 
 @app.get("/courses/{course_id}/lessons/create", response_class=HTMLResponse)
 async def create_lesson_page(
     course_id: int,
-    request: Request
+    context=Depends(template_context)
 ):
-    """Create lesson page"""
-    return templates.TemplateResponse("create_lesson.html", {
-        "request": request,
-        "course_id": course_id
-    })
+    context["course_id"] = course_id
+    return templates.TemplateResponse("lesson_create.html", context)
 
 
 @app.get("/lessons/{lesson_id}", response_class=HTMLResponse)
-async def lesson_detail_page(lesson_id: int, request: Request):
-    """Lesson detail page with words - data loaded via JavaScript"""
-    return templates.TemplateResponse("lesson_details.html", {
-        "request": request,
-        "lesson_id": lesson_id
-    })
+async def lesson_detail_page(
+        lesson_id: int,
+        context=Depends(template_context)
+):
+    context["lesson_id"] = lesson_id
+    return templates.TemplateResponse("lesson_details.html", context)
 
 
 @app.get("/lessons/{lesson_id}/words/create", response_class=HTMLResponse)
 async def create_word_page(
     lesson_id: int,
-    request: Request
+    context=Depends(template_context)
 ):
-    """Create word page"""
-    return templates.TemplateResponse("create_word.html", {
-        "request": request,
-        "lesson_id": lesson_id
-    })
+    context["lesson_id"] = lesson_id
+    return templates.TemplateResponse("lesson_word_create.html", context)
 
 
 @app.get("/study/{lesson_id}", response_class=HTMLResponse)
 async def study_page(
     lesson_id: int,
-    request: Request
+    context=Depends(template_context)
 ):
-    """Study session page - data loaded via JavaScript"""
-    return templates.TemplateResponse("study.html", {
-        "request": request,
-        "lesson_id": lesson_id
-    })
+    context["lesson_id"] = lesson_id
+    return templates.TemplateResponse("lesson_study.html", context)
 
 
 @app.get("/lessons/{lesson_id}/complete", response_class=HTMLResponse)
 async def completion_page(
     lesson_id: int,
-    request: Request
+    context=Depends(template_context)
 ):
-    """Lesson completion page - data loaded via JavaScript"""
-    return templates.TemplateResponse("completion.html", {
-        "request": request,
-        "lesson_id": lesson_id if lesson_id != 0 else None
-    })
+    context["lesson_id"] = lesson_id if lesson_id != 0 else None
+    return templates.TemplateResponse("lesson_complete.html", context)
 
 
 @app.get("/review/due", response_class=HTMLResponse)
-async def review_due_page(
-    request: Request
-):
-    """Review due words session page - data loaded via JavaScript"""
-    return templates.TemplateResponse("study.html", {
-        "request": request,
-        "lesson_id": None  # Special case for due review
-    })
+async def review_due_page(context=Depends(template_context)):
+    # Special case for review lesson
+    context["lesson_id"] = None
+    return templates.TemplateResponse("lesson_study.html", context)
 
 
 @app.get("/stats", response_class=HTMLResponse)
-async def stats_page(
-    request: Request
-):
-    """Stats page - data loaded via JavaScript"""
-    return templates.TemplateResponse("stats.html", {
-        "request": request
-    })
+async def stats_page(context=Depends(template_context)):
+    return templates.TemplateResponse("stats.html", context)
+
+
+@app.get("/settings", response_class=HTMLResponse)
+async def settings_page(context=Depends(template_context)):
+    return templates.TemplateResponse("settings.html", context)
 
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "version": "1.0.0"}
+    return {"status": "ok", "version": "1.0.0"}
 
 
 @app.exception_handler(404)

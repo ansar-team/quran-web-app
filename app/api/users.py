@@ -6,7 +6,8 @@ from app.database import get_db
 from app.models import User
 from app.schemas import UserSchema
 from app.crud import UserCRUD, LessonProgressCRUD
-from app.api.dependencies import get_current_user
+# from app.api.dependencies import get_current_user
+from app.utils.session_store import get_current_user
 
 router = APIRouter(prefix="/users", tags=["users"])
 

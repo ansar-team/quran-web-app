@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}{{ i18n.add_word.title }}{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1>📝 {{ i18n.add_word.header }}</h1>
+    <p id="lesson-name">{{ i18n.common.loading }}</p>
+</div>
+
+<form id="word-form" class="card">
+    <div class="form-group">
+        <label for="text">{{ i18n.add_word.word }} *</label>
+        <input type="text"
+               id="text"
+               name="text"
+               class="form-input"
+               required
+               placeholder="{{ i18n.add_word.ph_word }}">
+    </div>
+
+    <div class="form-group">
+        <label for="translation">{{ i18n.add_word.translation }} *</label>
+        <input type="text"
+               id="translation"
+               name="translation"
+               class="form-input"
+               required
+               placeholder="{{ i18n.add_word.ph_translation }}">
+    </div>
+
+    <div class="form-group">
+        <label for="pronunciation">{{ i18n.add_word.pronunciation }}</label>
+        <input type="text"
+               id="pronunciation"
+               name="pronunciation"
+               class="form-input"
+               placeholder="{{ i18n.add_word.ph_pronunciation }}">
+    </div>
+
+    <div class="form-group">
+        <label for="example_sentence">{{ i18n.add_word.example_sentence }}</label>
+        <textarea id="example_sentence"
+                  name="example_sentence"
+                  class="form-input"
+                  rows="2"
+                  placeholder="{{ i18n.add_word.ph_example }}"></textarea>
+    </div>
+
+    <button type="submit" class="btn">
+        ✓ {{ i18n.add_word.add_button }}
+    </button>
+
+    <button type="button"
+            class="btn"
+            onclick="saveAndAddAnother()"
+            style="background: var(--tg-theme-secondary-bg-color, #6c757d);">
+        ✓ {{ i18n.add_word.save_add_another }}
+    </button>
+
+    <a href="#" id="cancel-btn" class="btn btn-secondary">
+        {{ i18n.common.cancel }}
+    </a>
+</form>
+{% endblock %}
+
+{% block scripts %}
+const lessonId = {{ lesson_id }};
+let saveAndContinue = false;
+
+// Load lesson info
+async function loadLessonInfo() {
+    try {
+        const response = await fetch(`/api/v1/lessons/${lessonId}`);
+
+        if (!response.ok) {
+            throw new Error('Failed to load lesson info');
+        }
+
+        const lesson = await response.json();
+        document.getElementById('lesson-name').textContent = `For lesson: ${lesson.title}`;
+    } catch (error) {
+        console.error('Error loading lesson:', error);
+    }
+}
+
+document.getElementById('cancel-btn').href = `/lessons/${lessonId}`;
+
+function saveAndAddAnother() {
+    saveAndContinue = true;
+    document.getElementById('word-form').requestSubmit();
+}
+
+document.getElementById('word-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = {
+        text: document.getElementById('text').value,
+        translation: document.getElementById('translation').value,
+        pronunciation: document.getElementById('pronunciation').value || null,
+        example_sentence: document.getElementById('example_sentence').value || null
+    };
+
+    try {
+        const response = await fetch(`/api/v1/words/lesson/${lessonId}`, {
+            method: 'POST',
+            body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+            const word = await response.json();
+
+            if (saveAndContinue) {
+                document.getElementById('text').value = '';
+                document.getElementById('translation').value = '';
+                document.getElementById('pronunciation').value = '';
+                document.getElementById('example_sentence').value = '';
+
+                document.getElementById('text').focus();
+
+                saveAndContinue = false;
+            } else {
+                window.location.href = `/lessons/${lessonId}`;
+            }
+        } else {
+            const error = await response.json();
+            window.Telegram.WebApp.showAlert(`Error: ${error.detail || 'Failed to add word'}`);
+            saveAndContinue = false;
+        }
+    } catch (error) {
+        console.error('Error adding word:', error);
+        window.Telegram.WebApp.showAlert('Failed to add word. Please try again.');
+        saveAndContinue = false;
+    }
+});
+
+// Load lesson info on page load
+loadLessonInfo();
+{% endblock %}

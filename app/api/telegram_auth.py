@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Header
+from fastapi import APIRouter, Depends, HTTPException, status, Header, Response
 from sqlalchemy.orm import Session
 
 from app import schemas
@@ -7,18 +7,17 @@ from app.crud import UserCRUD
 from app.database import get_db
 from app.config import settings
 from app.utils.telegram import extract_telegram_init_data, verify_telegram_webapp_data
+from app.utils.session_store import create_session
 
 router = APIRouter(prefix="/telegram/mini-app", tags=["telegram"])
 
 
 @router.post("/auth")
 def telegram_mini_app_auth(
+        response: Response,
         authorization: Optional[str] = Header(None),
         db: Session = Depends(get_db)
 ):
-    """
-    Authenticate Telegram Mini App user
-    """
     # Get the init data from Authorization header or request body
     init_data = extract_telegram_init_data(authorization)
     try:
@@ -34,6 +33,17 @@ def telegram_mini_app_auth(
         # Extract user information
         telegram_id = user_data.get("id")
         username = user_data.get("username")
+
+        session_id = create_session(telegram_id)
+
+        response.set_cookie(
+            key="session_id",
+            value=session_id,
+            httponly=True,
+            secure=True,
+            samesite="strict",
+            max_age=15 * 60
+        )
 
         if not telegram_id:
             raise HTTPException(

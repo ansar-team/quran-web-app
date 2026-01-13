@@ -4,87 +4,94 @@
 
 {% block content %}
 <div class="header">
-    <h1>📊 Your Progress</h1>
-    <p>Track your learning journey</p>
+    <h1>📊 {{ i18n.stats.title }}</h1>
+    <p>{{ i18n.courses.desc }}</p>
 </div>
 
 <div id="stats-content">
-    <div style="text-align: center; padding: 40px;">
+    <div id="loading" style="text-align: center; padding: 40px;">
         <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
-        <p style="margin-top: 16px;">Loading stats...</p>
+        <p style="margin-top: 16px;">{{ i18n.stats.loading }}...</p>
+    </div>
+    <div id="empty-card" class="empty-state" style="display: none">
+        <div class="empty-icon">📈</div>
+        <h3>{{ i18n.stats.e_title }}</h3>
+        <p>{{ i18n.stats.e_desc }}</p>
+    </div>
+    <div id="error-card" class="card" style="background: #f8d7da; color: #721c24; display: none">
+        <h3>{{ i18n.stats.error }}</h3>
+        <p>{{ i18n.stats.hint }}</p>
+    </div>
+    <div id="stats-main" style="display:none;">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div id="total-lessons" class="stat-number">0</div>
+                <div class="stat-label">{{ i18n.stats.total_lessons }}</div>
+            </div>
+            <div class="stat-card">
+                <div id="completed-lessons" class="stat-number">0</div>
+                <div class="stat-label">{{ i18n.stats.completed }}</div>
+            </div>
+            <div class="stat-card">
+                <div id="learned-words" class="stat-number">0</div>
+                <div class="stat-label">{{ i18n.stats.learned_words }}</div>
+            </div>
+            <div class="stat-card">
+                <div id="due-review" class="stat-number">0</div>
+                <div class="stat-label">{{ i18n.stats.due_for_review }}</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-bottom: 12px;">{{ i18n.stats.completion_rate }}</h3>
+            <div class="progress-bar" style="height:24px;">
+                <div id="completion-bar" class="progress-fill" style="display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;width:0%">
+                    <span id="completion-text">0%</span>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<a href="/" class="btn btn-secondary">← Back to Home</a>
+<a href="/" class="btn btn-secondary" style="margin-bottom: 58px">← {{ i18n.stats.btn_back }}</a>
 {% endblock %}
 
 {% block scripts %}
 async function loadStats() {
     try {
-        const response = await fetch('/api/v1/users/progress', {
-            headers: createAuthHeaders()
-        });
+        const response = await fetch('/api/v1/users/progress');
 
         if (!response.ok) {
             throw new Error('Failed to load stats');
         }
 
         const stats = await response.json();
+        document.getElementById('loading').style.display = 'none';
+
         const statsContent = document.getElementById('stats-content');
 
         if (stats.total_words === 0) {
-            statsContent.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon">📈</div>
-                    <h3>No learning data yet</h3>
-                    <p>Start learning to see your progress here!</p>
-                </div>
-            `;
-        } else {
-            const completionRate = stats.total_lessons > 0
-                ? Math.round((stats.completed_lessons / stats.total_lessons) * 100)
-                : 0;
-
-            statsContent.innerHTML = `
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-number">${stats.total_lessons || 0}</div>
-                        <div class="stat-label">Total Lessons</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${stats.completed_lessons || 0}</div>
-                        <div class="stat-label">Completed</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${stats.total_words || 0}</div>
-                        <div class="stat-label">Learned Words</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${stats.words_due_for_review || 0}</div>
-                        <div class="stat-label">Due for Review</div>
-                    </div>
-                </div>
-
-                ${stats.total_lessons > 0 ? `
-                    <div class="card">
-                        <h3 style="margin-bottom: 12px;">Completion Rate</h3>
-                        <div class="progress-bar" style="height: 24px;">
-                            <div class="progress-fill" style="width: ${completionRate}%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
-                                ${completionRate}%
-                            </div>
-                        </div>
-                    </div>
-                ` : ''}
-            `;
+            document.getElementById('empty-card').style.display = 'block';
+            return;
         }
+
+        document.getElementById('stats-main').style.display = 'block';
+
+        document.getElementById('total-lessons').textContent = stats.total_lessons || 0;
+        document.getElementById('completed-lessons').textContent = stats.completed_lessons || 0;
+        document.getElementById('learned-words').textContent = stats.total_words || 0;
+        document.getElementById('due-review').textContent = stats.words_due_for_review || 0;
+
+        const rate = stats.total_lessons
+            ? Math.round(stats.completed_lessons / stats.total_lessons * 100)
+            : 0;
+
+        document.getElementById('completion-bar').style.width = rate + '%';
+        document.getElementById('completion-text').textContent = rate + '%';
     } catch (error) {
         console.error('Error loading stats:', error);
-        document.getElementById('stats-content').innerHTML = `
-            <div class="card" style="background: #f8d7da; color: #721c24;">
-                <h3>Error loading stats</h3>
-                <p>Please try again</p>
-            </div>
-        `;
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error-card').style.display = "block";
     }
 }
 

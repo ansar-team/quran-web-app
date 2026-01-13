@@ -8,39 +8,18 @@ from sqlalchemy.orm import Session
 
 class FSRSManager:
     """Manages FSRS (Free Spaced Repetition Scheduler) integration"""
-
     def __init__(self):
         self.scheduler = Scheduler()
 
-    def create_card(self, user_id: int, word_id: int) -> Dict[str, Any]:
-        """Create a new FSRS card for a word"""
-        card = Card()
-        return {
-            "user_id": user_id,
-            "word_id": word_id,
-            "fsrs_card_data": card.to_dict(),
-            "total_reviews": 0,
-            "correct_reviews": 0,
-            "last_reviewed_at": None
-        }
-
     def review_card(self, user_word: UserWordSchema, rating: RatingEnum,
-                    response_time_seconds: Optional[float] = None,
-                    lesson_context: Optional[int] = None) -> tuple[Dict[str, Any], Dict[str, Any]]:
-        """
-        Review a card with the given rating and return updated card data and review log
-
-        Returns:
-            tuple: (updated_card_data, review_log_data)
-        """
-        # Convert UserWord to FSRS Card
+                    response_time_seconds: Optional[float] = None) -> tuple[Dict[str, Any], Dict[str, Any]]:
+        # Prepare data
         card = Card.from_dict(user_word.fsrs_card_data)
-
-        # Convert our rating enum to FSRS rating
         fsrs_rating = Rating(rating.value)
 
         # Review the card
-        card, review_log = self.scheduler.review_card(card, fsrs_rating)
+        card, review_log = self.scheduler.review_card(
+            card, fsrs_rating, datetime.now(timezone.utc), response_time_seconds)
 
         # Convert back to dictionaries
         updated_card_data = card.to_dict()
@@ -78,66 +57,49 @@ class FSRSManager:
 
 class WordLearningService:
     """Service for managing word learning with FSRS"""
-
     def __init__(self, db: Session):
         self.db = db
         self.fsrs_manager = FSRSManager()
 
     def create_user_word(self, user_id: int, word_id: int) -> Optional[UserWordSchema]:
-        """Create a new user word entry with FSRS card"""
-        card_data = self.fsrs_manager.create_card(user_id, word_id)
-
+        card = Card()
         user_word = UserWord(
             user_id=user_id,
             word_id=word_id,
-            fsrs_card_data=card_data["fsrs_card_data"],
-            total_reviews=card_data["total_reviews"],
-            correct_reviews=card_data["correct_reviews"],
-            last_reviewed_at=card_data["last_reviewed_at"]
+            fsrs_card_data=card.to_dict()
         )
-
         self.db.add(user_word)
         self.db.commit()
         self.db.refresh(user_word)
 
-        return user_word
+        return UserWordSchema.model_validate(user_word)
 
 
     def review_word(self, user_word: UserWordSchema, rating: RatingEnum,
                     response_time_seconds: Optional[float] = None,
                     lesson_context: Optional[int] = None) -> tuple[UserWordSchema, ReviewSchema]:
-        """Review a word and update FSRS data"""
         # Update FSRS card
         updated_card_data, review_log_data = self.fsrs_manager.review_card(
-            user_word, rating, response_time_seconds, lesson_context
+            user_word, rating, response_time_seconds
         )
 
         # Update user word
         user_word.fsrs_card_data = updated_card_data
-        user_word.total_reviews += 1
-        if rating in [RatingEnum.GOOD, RatingEnum.EASY]:
-            user_word.correct_reviews += 1
-        user_word.last_reviewed_at = datetime.now(timezone.utc)
 
         # Create review log
         review = Review(
             user_word_id=user_word.id,
             rating=rating.value,
             review_datetime=datetime.fromisoformat(review_log_data["review_datetime"].replace('Z', '+00:00')),
-            scheduled_days=review_log_data.get("scheduled_days"),
-            elapsed_days=review_log_data.get("elapsed_days"),
-            review=review_log_data.get("review"),
-            lapses=review_log_data.get("lapses"),
+            # TODO: add due field
+            # due=updated_card_data.get("due"),
             lesson_context=lesson_context,
             response_time_seconds=response_time_seconds
         )
 
         word_query = self.db.query(UserWord).filter(UserWord.id == user_word.id)
         word_query.update({
-            'fsrs_card_data': user_word.fsrs_card_data,
-            'total_reviews': user_word.total_reviews,
-            'correct_reviews': user_word.correct_reviews,
-            'last_reviewed_at': user_word.last_reviewed_at
+            'fsrs_card_data': user_word.fsrs_card_data
         }, synchronize_session=False)
 
         self.db.add(review)
@@ -145,24 +107,6 @@ class WordLearningService:
         self.db.refresh(review)
 
         return UserWordSchema.model_validate(word_query.first()), ReviewSchema.model_validate(review)
-
-
-    def get_word_progress(self, user_word: UserWordSchema) -> Dict[str, Any]:
-        """Get comprehensive progress information for a word"""
-        retrievability = self.fsrs_manager.get_card_retrievability(user_word)
-        is_due = self.fsrs_manager.is_card_due(user_word)
-        next_review = self.fsrs_manager.get_next_review_time(user_word)
-        state = self.fsrs_manager.get_card_state(user_word)
-
-        return {
-            "retrievability": retrievability,
-            "is_due": is_due,
-            "next_review_at": next_review,
-            "state": state,
-            "total_reviews": user_word.total_reviews,
-            "correct_reviews": user_word.correct_reviews,
-            "accuracy_rate": user_word.correct_reviews / user_word.total_reviews if user_word.total_reviews > 0 else 0
-        }
 
 
     def get_words_due_for_review(self, user_id: int, limit: int = 20) -> list[UserWordSchema]:
@@ -176,7 +120,6 @@ class WordLearningService:
             if self.fsrs_manager.is_card_due(UserWordSchema.model_validate(user_word)):
                 due_words.append(UserWordSchema.model_validate(user_word))
 
-        # Sort by due time (earliest first)
         due_words.sort(key=lambda uw: self.fsrs_manager.get_next_review_time(uw))
 
         return due_words[:limit]
