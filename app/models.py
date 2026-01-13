@@ -36,7 +36,6 @@ class Course(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relationships
     user = relationship("User", back_populates="courses")
     lessons = relationship("Lesson", back_populates="course", cascade="all, delete-orphan")
 
@@ -53,7 +52,6 @@ class Lesson(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relationships
     course = relationship("Course", back_populates="lessons")
     words = relationship("Word", back_populates="lesson", cascade="all, delete-orphan")
 
@@ -67,12 +65,9 @@ class Word(Base):
     translation = Column(String, nullable=False)  # Translation in native language
     pronunciation = Column(String, nullable=True)  # IPA or pronunciation guide
     example_sentence = Column(Text, nullable=True)  # Example usage
-    difficulty_level = Column(Integer, default=1)  # 1-5 difficulty scale
-    order_index = Column(Integer, nullable=False)  # Order within lesson
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relationships
     lesson = relationship("Lesson", back_populates="words")
     user_words = relationship("UserWord", back_populates="word", cascade="all, delete-orphan")
 
@@ -84,18 +79,10 @@ class UserWord(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     word_id = Column(Integer, ForeignKey("words.id"), nullable=False)
-
-    # FSRS Card data (serialized as JSON)
     fsrs_card_data = Column(JSON, nullable=False)
-
-    # Additional tracking
-    total_reviews = Column(Integer, default=0)
-    correct_reviews = Column(Integer, default=0)
-    last_reviewed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relationships
     user = relationship("User")
     word = relationship("Word", back_populates="user_words")
     reviews = relationship("Review", back_populates="user_word", cascade="all, delete-orphan")
@@ -110,6 +97,7 @@ class Review(Base):
     # FSRS Review data
     rating = Column(Integer, nullable=False)  # 1=Again, 2=Hard, 3=Good, 4=Easy
     review_datetime = Column(DateTime(timezone=True), server_default=func.now())
+    # TODO: add scheduled_to or due
     scheduled_days = Column(Integer, nullable=True)  # Days until next review
     elapsed_days = Column(Integer, nullable=True)  # Days since last review
     review = Column(Integer, nullable=True)  # Review count
@@ -121,7 +109,6 @@ class Review(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Relationships
     user_word = relationship("UserWord", back_populates="reviews")
     lesson = relationship("Lesson")
 
@@ -148,6 +135,5 @@ class LessonProgress(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relationships
     user = relationship("User")
     lesson = relationship("Lesson")
